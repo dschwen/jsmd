@@ -10,6 +10,11 @@ var jsmd = (function(){
   Vector.prototype.len2 = function() {
     return this.x * this.x + this.y * this.y;
   }
+  Vector.prototype.pbclen = function(w,h) {
+    var dx = this.x - Math.round(this.x/w) * w;
+    var dx = this.y - Math.round(this.y/h) * h;
+    return Math.sqrt( dx*dx + dy*dy );
+  }
   Vector.prototype.normalize = function() {
     var len = this.len();
     if( len === 0 ) {
@@ -23,6 +28,24 @@ var jsmd = (function(){
   }
   Vector.distance2 = function(a,b) {
     return (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
+  }
+  Vector.pbcdistance = function(a,b,w,h) {
+    var dx = a.x-b.x; 
+    dx -= Math.round(dx/w) * w;
+    var dy = a.y-b.y;
+    dy -= Math.round(dy/h) * h;
+    return Math.sqrt( dx*dx + dy*dy );
+  }
+  Vector.pbcdistance2 = function(a,b,w,h) {
+    var dx = a.x-b.x; 
+    dx -= Math.round(dx/w) * w;
+    var dy = a.y-b.y;
+    dy -= Math.round(dy/h) * h;
+    return dx*dx + dy*dy;
+  }
+  Vector.prototype.wrap = function(w,h) {
+    this.x = (this.x+w)%w;
+    this.y = (this.y+h)%h;
   }
   Vector.sub = function(a,b) {
     return new Vector( a.x-b.x, a.y-b.y );
@@ -115,11 +138,9 @@ var jsmd = (function(){
 
   // Simulation constructor (this contains all the important logic)
   function Simulation(w,h) {
-    // list of atoms
-    this.atoms = [];
-
-    // list of atom types
-    this.types = [];
+    this.atoms    = []; // list of atoms
+    this.barriers = []; // list of barriers
+    this.types    = []; // list of atom types
 
     // interaction matrix
     this.interaction = [];
@@ -128,11 +149,17 @@ var jsmd = (function(){
     this.w = w;
     this.h = h;
 
+    // canvas for visualization
+    this.canvas = {};
+
+    // setup default render chain
+    this.renderChain = [ renderAtoms, renderForces, renderBarriers ];
+
     // linkcell data
-    this lc = {};
+    this.lc = {};
 
     // neighborlist data
-    this nl = { dr : 0.0, data : [] };
+    this.nl = { dr : 0.0, data : [] };
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -180,7 +207,7 @@ var jsmd = (function(){
       this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)][Math.floor(this.atoms[i].p.y/this.lc.dy)].push(i);
     }
   }
-  Simulation.prototype.clearNeighborlist() {
+  Simulation.prototype.clearNeighborlist = function() {
     for( i = 0; i < this.atoms.length; ++i ) {
       this.nl.data[i] = [];
     }
@@ -211,7 +238,7 @@ var jsmd = (function(){
           ka = this.lc.data[i][j][k];
           for( l = k+1; l < ll; ++l ) {
             la = this.lc.data[i][j][l];
-            if( jsmd.Vector.distance2( this.atoms[ka].p, this.atoms[la].p ) < this.rm2 ) {
+            if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.w, this.h ) < this.rm2 ) {
               this.nl.data[ka].push(la);
             }
           }
@@ -222,7 +249,7 @@ var jsmd = (function(){
             // loop over all atoms in that neighbor cells
             for( l = 0; l < this.lc.data[i2][j2].length; ++l ) {
               la = this.lc.data[i2][j2][l];
-              if( jsmd.Vector.distance2( this.atoms[ka].p, this.atoms[la].p ) < this.rm2 ) {
+              if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.w, this.h ) < this.rm2 ) {
                 this.nl.data[ka].push(la);
               }
             }
@@ -251,7 +278,7 @@ var jsmd = (function(){
         j = this.nl.data[k];
 
         rvec = jsmd.Vector.sub(atoms[j].p, atoms[i].p);
-        dr = rvec.len();
+        dr = rvec.pbclen( this.w, this.h );
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.atoms[j].t];
           if( f !== undefined ) {
@@ -293,8 +320,9 @@ var jsmd = (function(){
       var m = this.types[this.atoms[i].t].m;
       dp.set( this.atoms[i].v ); dp.scale(dt); // dp = v*dt
       dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt*dt) );
-      atoms[i].p.add(dp);
-      atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+      this.atoms[i].p.add(dp);
+      this.atoms[i].p.wrap( this.w, this.h );
+      this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
 
       // track maximum displacement
       dp2 = dp.len2();
@@ -305,8 +333,67 @@ var jsmd = (function(){
     this.updateForces();
 
     // second velocity verlet step
-    for( i = 0; i < atoms.length; ++i ) {
-      atoms[i].v.add( jsmd.Vector.scale(atoms[i].f, 0.5/m*dt) );
+    for( i = 0; i < this.atoms.length; ++i ) {
+      this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+    }
+  }
+  Simulation.prototype.setCanvas = function(canvas) {
+    this.canvas = {
+      node : canvas,
+      w : canvas.width,
+      h : canvas.height,
+      ctx : canvas.getContext('2d')
+    };
+  }
+  Simulation.prototype.draw = function() {
+    var c = this.canvas.ctx;
+    var i;
+
+    // setup transform
+    c.setTransform( this.canvas.w/this.w, 0,0, this.canvas.h/this.h, 0,0 );
+
+    // clear
+    c.fillStyle = "rgb(200,200,200)";
+    c.fillRect(0, 0, 800, 500);
+
+    // process render chain
+    for( i = 0; i < this.renderChain.length; ++i ) {
+      this.renderChain[i].call(this,c);
+    }
+  }
+
+  // built-in render routines
+  function renderAtoms(c) {
+    // draw nuclei
+    c.strokeStyle = "rgba(0,100,0,0.5)";
+    for( var i = 0; i < this.atoms.length; ++i ) {
+      c.fillStyle = this.types[this.atoms[i].t].color;
+      c.beginPath();
+      c.arc( this.atoms[i].p.x, this.atoms[i].p.y, this.types[this.atoms[i].t].r, 0, Math.PI*2.0, true);
+      c.closePath();
+      c.fill();
+    }
+  }
+  function renderBarriers(c) {
+    // draw barriers
+    c.strokeStyle = "rgba(0,0,100,1)";
+    for( var i = 0; i < this.barriers.length; ++i ) {
+      c.beginPath();
+      c.moveTo( this.barriers[i].p[0].x, this.barriers[i].p[0].y );
+      c.lineTo( this.barriers[i].p[1].x, this.barriers[i].p[1].y );
+      c.closePath();
+      c.stroke();
+    }
+  }
+  function renderForces(c) {
+    // draw forces
+    c.strokeStyle = "rgba(0,100,0,0.5)";
+    for( var i = 0; i < this.atoms.length; ++i ) {
+      c.beginPath();
+      c.moveTo( this.atoms[i].p.x, this.atoms[i].p.y );
+      c.lineTo( this.atoms[i].p.x + this.atoms[i].f.x * 0.1, this.atoms[i].p.y + this.atoms[i].f.y * 0.1 );
+      c.closePath();
+      c.stroke();
     }
   }
 
@@ -316,6 +403,12 @@ var jsmd = (function(){
     AtomType : AtomType,
     Barrier : Barrier,
     Vector : Vector,
-    Simulation : Simulation
+    Simulation : Simulation,
+
+    renderer : {
+      atoms : renderAtoms,
+      barriers : renderBarriers,
+      forces : renderForces
+    }
   };
 })();

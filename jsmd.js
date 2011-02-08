@@ -1,5 +1,5 @@
 var jsmd = (function(){
-  // vector constructor
+  // Vector constructor
   function Vector(x,y) {
     this.x = x || 0.0;
     this.y = y || 0.0;
@@ -47,8 +47,11 @@ var jsmd = (function(){
     this.x = a.x * s;
     this.y = a.y * s;
   }
+  Vector.random = function(w,h) {
+    return new Vector( Math.random()*w, Math.random()*h );
+  }
 
-  // atom constructor
+  // Atom constructor
   function Atom(x,y) {
     this.p = new Vector(x,y);
     this.v = new Vector(0,0);
@@ -56,15 +59,15 @@ var jsmd = (function(){
     this.t = 0;
   }
 
-  // atomtype constructor
+  // AtomType constructor
   function AtomType() {
     this.r = 3;
     this.color  = "rgb(255,0,0)";
     this.Z = 1;
     this.m = 1.0;
   }
-
-  // barrier constructor
+  
+  // Barrier constructor
   function Barrier(x1,y1,x2,y2) {
     this.p = [ new Vector(x1,y1),  new Vector(x2,y2) ];
 

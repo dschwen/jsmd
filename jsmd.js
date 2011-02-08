@@ -12,7 +12,7 @@ var jsmd = (function(){
   }
   Vector.prototype.pbclen = function(w,h) {
     var dx = this.x - Math.round(this.x/w) * w;
-    var dx = this.y - Math.round(this.y/h) * h;
+    var dy = this.y - Math.round(this.y/h) * h;
     return Math.sqrt( dx*dx + dy*dy );
   }
   Vector.prototype.normalize = function() {
@@ -164,10 +164,10 @@ var jsmd = (function(){
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
     for( var i = 0; i < 2; ++i ) {
-      if( interaction[t[i]] === undefined ) {
-        interaction[t[i]] = [];
+      if( this.interaction[t[i]] === undefined ) {
+        this.interaction[t[i]] = [];
       }
-      interaction[t[i]][t[1-i]] = f;
+      this.interaction[t[i]][t[1-i]] = f;
     }
   }
   Simulation.prototype.setCutOff = function(rc,rp) {
@@ -223,7 +223,7 @@ var jsmd = (function(){
     this.updateLinkcell()
 
     // clear Neigborlist
-    this.updateLinkcell()
+    this.clearNeighborlist()
 
     var i,j,i2,j2,k,l,m;
     var ka, la;
@@ -277,12 +277,12 @@ var jsmd = (function(){
       for( k = 0; k < this.nl.data.length; ++k ) {  // new iteration over neighborlist
         j = this.nl.data[k];
 
-        rvec = jsmd.Vector.sub(atoms[j].p, atoms[i].p);
+        rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
         dr = rvec.pbclen( this.w, this.h );
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.atoms[j].t];
           if( f !== undefined ) {
-            F = f(dr,this.atoms[i].t,this.atoms[j].t);
+            F = f( dr, [ this.atoms[i].t, this.atoms[j].t ] );
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
             this.atoms[j].f.sub(rvec);
@@ -300,7 +300,7 @@ var jsmd = (function(){
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.barriers[j].t];
           if( f !== undefined ) {
-            F = f(dr,this.atoms[i].t,this.barriers[j].t);
+            F = f( dr, [ this.atoms[i].t, this.barriers[j].t ] );
             //$('#mdlog').text(dr+','+f);
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
@@ -397,6 +397,15 @@ var jsmd = (function(){
     }
   }
 
+  // built-in force functions
+  function forceLJ(r,t) {
+    var e = 10.0;
+    var rm6 = 1.0;
+    var rm12 = 1.0;
+    return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
+  }
+
+
   // export public interface
   return {
     Atom : Atom,
@@ -409,6 +418,9 @@ var jsmd = (function(){
       atoms : renderAtoms,
       barriers : renderBarriers,
       forces : renderForces
+    },
+    force : {
+      lennardJones : forceLJ
     }
   };
 })();

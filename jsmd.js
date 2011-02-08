@@ -7,6 +7,9 @@ var jsmd = (function(){
   Vector.prototype.len = function() {
     return Math.sqrt( this.x * this.x + this.y * this.y );
   }
+  Vector.prototype.len2 = function() {
+    return this.x * this.x + this.y * this.y;
+  }
   Vector.prototype.normalize = function() {
     var len = this.len();
     if( len === 0 ) {
@@ -14,6 +17,12 @@ var jsmd = (function(){
     } else {
       this.x /= len; this.y /= len;
     }
+  }
+  Vector.distance = function(a,b) {
+    return Math.sqrt( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) );
+  }
+  Vector.distance2 = function(a,b) {
+    return (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
   }
   Vector.sub = function(a,b) {
     return new Vector( a.x-b.x, a.y-b.y );
@@ -47,6 +56,14 @@ var jsmd = (function(){
     this.x = a.x * s;
     this.y = a.y * s;
   }
+  Vector.prototype.zero = function() {
+    this.x = 0.0;
+    this.y = 0.0;
+  }
+  Vector.prototype.set = function(a) {
+    this.x = a.x;
+    this.y = a.y;
+  }
   Vector.random = function(w,h) {
     return new Vector( Math.random()*w, Math.random()*h );
   }
@@ -66,7 +83,7 @@ var jsmd = (function(){
     this.Z = 1;
     this.m = 1.0;
   }
-  
+
   // Barrier constructor
   function Barrier(x1,y1,x2,y2) {
     this.p = [ new Vector(x1,y1),  new Vector(x2,y2) ];
@@ -129,7 +146,9 @@ var jsmd = (function(){
   Simulation.prototype.setCutOff = function(rc,rp) {
     // initialize linkcells
     var rm = rc+rp;
+    this.rm2 = rm*rm; // safe distance squared (for fast neighborlist builds)
     this.rp = rp;
+    this.rc = rc;
 
     // number and size of cells
     this.lc.nx = Math.floor(this.w/rm);
@@ -167,9 +186,11 @@ var jsmd = (function(){
     }
   }
   Simulation.prototype.updateNeighborlist = function(dr) {
-    // check if update is necessary
+    // check if update is necessary (call without parameter to force update)
     this.nl.dr += 2.0*dr;
-    if( this.nl.dr < this.rp ) { return; }
+    if( dr !== undefined && this.nl.dr < this.rp ) { 
+      return;
+    }
 
     // update Linkcells first
     this.updateLinkcell()
@@ -178,6 +199,7 @@ var jsmd = (function(){
     this.updateLinkcell()
 
     var i,j,i2,j2,k,l,m;
+    var ka, la;
     var n = [ [0,1],[1,this.h-1],[1,0],[1,1] ]; // half the neighbors
     // loop over all cells
     for( i = 0; i < this.lc.nx; ++i ) {
@@ -186,9 +208,12 @@ var jsmd = (function(){
         var ll = this.lc.data[i][j].length;
         for( k = 0; k < ll; ++k ) {
           // loop over remaining atoms in local cell
-          var ka = this.lc.data[i][j][k];
+          ka = this.lc.data[i][j][k];
           for( l = k+1; l < ll; ++l ) {
-            this.nl.data[ka].push(this.lc.data[i][j][l]);
+            la = this.lc.data[i][j][l];
+            if( jsmd.Vector.distance2( this.atoms[ka].p, this.atoms[la].p ) < this.rm2 ) {
+              this.nl.data[ka].push(la);
+            }
           }
           // loop over half the neighbor cells
           for( m = 0; m < n.length; ++m ) {
@@ -196,16 +221,21 @@ var jsmd = (function(){
             j2 = (j+n[m][1]) % this.lc.ny;
             // loop over all atoms in that neighbor cells
             for( l = 0; l < this.lc.data[i2][j2].length; ++l ) {
-              this.nl.data[ka].push(this.lc.data[i2][j2][l]);
+              la = this.lc.data[i2][j2][l];
+              if( jsmd.Vector.distance2( this.atoms[ka].p, this.atoms[la].p ) < this.rm2 ) {
+                this.nl.data[ka].push(la);
+              }
             }
           }
         }
+        // end local cell
       }
     }
   }
   Simulation.prototype.updateForces = function() {
     var i,j,k;  // integer
-    var f,dr; // float
+    var F,dr; // float
+    var f; // function
     var rvec; // Vector
 
     // zero forces set timestep
@@ -222,30 +252,63 @@ var jsmd = (function(){
 
         rvec = jsmd.Vector.sub(atoms[j].p, atoms[i].p);
         dr = rvec.len();
-        if( dr < 100.0 ) {
-          f = (phi[atoms[i].t][atoms[j].t])(dr,atoms[i].t,atoms[j].t);
-          rvec.scale(f/dr);
-          atoms[i].f.add(rvec);
-          atoms[j].f.sub(rvec);
+        if( dr < this.rc ) {
+          f = this.interaction[this.atoms[i].t][this.atoms[j].t];
+          if( f !== undefined ) {
+            F = f(dr,this.atoms[i].t,this.atoms[j].t);
+            rvec.scale(F/dr);
+            this.atoms[i].f.add(rvec);
+            this.atoms[j].f.sub(rvec);
+          }
         }
       }
     }
+
     // add barrier interaction
-    for( i = 0; i < atoms.length; ++i ) {
-      for( j = 0; j < barriers.length; ++j ) {
+    for( i = 0; i < this.atoms.length; ++i ) {
+      for( j = 0; j < this.barriers.length; ++j ) {
         // find distance to barrier
-        rvec = barriers[j].dist(atoms[i].p);
+        rvec = this.barriers[j].dist(this.atoms[i].p);
         dr = rvec.len();
-        if( dr < 1000.0 ) {
-          f = (phi[atoms[i].t][barriers[j].t])(dr);
-          //$('#mdlog').text(dr+','+f);
-          rvec.scale(f/dr);
-          atoms[i].f.add(rvec);
+        if( dr < this.rc ) {
+          f = this.interaction[this.atoms[i].t][this.barriers[j].t];
+          if( f !== undefined ) {
+            F = f(dr,this.atoms[i].t,this.barriers[j].t);
+            //$('#mdlog').text(dr+','+f);
+            rvec.scale(F/dr);
+            this.atoms[i].f.add(rvec);
+          }
         }
       }
     }
   }
+  Simulation.prototype.velocityVerlet = function() {
+    var i,j;
+    var dt = 0.01;
+    var dr2 = 0.0;
 
+    // first velocity verlet step
+    var dp = new jsmd.Vector(), dp2;
+    for( i = 0; i < this.atoms.length; ++i ) {
+      var m = this.types[this.atoms[i].t].m;
+      dp.set( this.atoms[i].v ); dp.scale(dt); // dp = v*dt
+      dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt*dt) );
+      atoms[i].p.add(dp);
+      atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+
+      // track maximum displacement
+      dp2 = dp.len2();
+      if( dp2 > dr2 ) { dr2 = dp2; }
+    }
+
+    this.updateNeighborlist(Math.sqrt(dr2));
+    this.updateForces();
+
+    // second velocity verlet step
+    for( i = 0; i < atoms.length; ++i ) {
+      atoms[i].v.add( jsmd.Vector.scale(atoms[i].f, 0.5/m*dt) );
+    }
+  }
 
   // export public interface
   return {

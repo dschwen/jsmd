@@ -117,7 +117,7 @@ var jsmd = (function(){
 
     // colinear vector
     this.c = new Vector( x2-x1, y2-y1 );
-    this.l = this.c.len(); // length
+    this.l = this.c.pbclen(); // length
     this.c.scale(1.0/this.l);
 
     // default interation type
@@ -304,7 +304,7 @@ var jsmd = (function(){
       for( j = 0; j < this.barriers.length; ++j ) {
         // find distance to barrier
         rvec = this.barriers[j].dist(this.atoms[i].p);
-        dr = rvec.len();
+        dr = rvec.pbclen();
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.barriers[j].t];
           if( f !== undefined ) {

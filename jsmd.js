@@ -162,7 +162,7 @@ var jsmd = (function(){
     this.nl = { dr : 0.0, data : [] };
 
     // timestep data
-    this.dt = 0.0;
+    this.dt = 0.01;
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -349,10 +349,10 @@ var jsmd = (function(){
     }
 
     // compute timestep
-    var dmax = 0.05;
+    var dmax = 0.1;
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
-    this.dt = Math.min( dmax/vmax, Math.sqrt(2*dmax/amax) );
+    //this.dt = Math.max( 0.0005, Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) ) );
   }
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {
@@ -381,14 +381,33 @@ var jsmd = (function(){
 
   // built-in render routines
   function renderAtoms(c) {
-    // draw nuclei
-    c.strokeStyle = "rgba(0,100,0,0.5)";
-    for( var i = 0; i < this.atoms.length; ++i ) {
-      c.fillStyle = this.types[this.atoms[i].t].color;
+    function drawAtom(x,y,r) {
       c.beginPath();
-      c.arc( this.atoms[i].p.x, this.atoms[i].p.y, this.types[this.atoms[i].t].r, 0, Math.PI*2.0, true);
+      c.arc( x, y, r, 0, Math.PI*2.0, true);
       c.closePath();
       c.fill();
+    }
+    // draw nuclei
+    c.strokeStyle = "rgba(0,100,0,0.5)";
+    var x,y,r;
+    for( var i = 0; i < this.atoms.length; ++i ) {
+      c.fillStyle = this.types[this.atoms[i].t].color;
+      x = this.atoms[i].p.x;
+      y = this.atoms[i].p.y;
+      r = this.types[this.atoms[i].t].r;
+
+      // draw atom
+      drawAtom(x,y,r);
+
+      // draw wrap-around copies
+      if( x <= r || y <= r || x+r > this.w || y+r < this.h ) {
+        if( x <= r ) drawAtom(x+this.w,y,r);
+        if( y <= r ) drawAtom(x,y+this.h,r);
+        if( x <= r &&  y <= r ) drawAtom(x+this.w,y+this.h,r);
+        if( x+r > this.w ) drawAtom(x-this.w,y,r);
+        if( y+r < this.h ) drawAtom(x,y-this.h,r);
+        if( x+r > this.w && y+r < this.h) drawAtom(x-this.w,y-this.h,r);
+      }
     }
   }
   function renderBarriers(c) {
@@ -405,10 +424,11 @@ var jsmd = (function(){
   function renderForces(c) {
     // draw forces
     c.strokeStyle = "rgba(0,100,0,0.5)";
+    c.lineWidth = 0.01;
     for( var i = 0; i < this.atoms.length; ++i ) {
       c.beginPath();
       c.moveTo( this.atoms[i].p.x, this.atoms[i].p.y );
-      c.lineTo( this.atoms[i].p.x + this.atoms[i].f.x * 0.1, this.atoms[i].p.y + this.atoms[i].f.y * 0.1 );
+      c.lineTo( this.atoms[i].p.x + this.atoms[i].f.x * 0.01, this.atoms[i].p.y + this.atoms[i].f.y * 0.01 );
       c.closePath();
       c.stroke();
     }

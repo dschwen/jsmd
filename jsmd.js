@@ -44,8 +44,8 @@ var jsmd = (function(){
     return dx*dx + dy*dy;
   }
   Vector.prototype.wrap = function(w,h) {
-    this.x = (this.x+w)%w;
-    this.y = (this.y+h)%h;
+    this.x -= Math.floor(this.x/w) * w;
+    this.y -= Math.floor(this.y/h) * h;
   }
   Vector.sub = function(a,b) {
     return new Vector( a.x-b.x, a.y-b.y );
@@ -160,6 +160,9 @@ var jsmd = (function(){
 
     // neighborlist data
     this.nl = { dr : 0.0, data : [] };
+
+    // timestep data
+    this.dt = 0.0;
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -204,6 +207,11 @@ var jsmd = (function(){
 
     // repopulate with all atoms
     for( i = 0; i < this.atoms.length; ++i ) {
+      if( this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)] === undefined ||
+          this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)][Math.floor(this.atoms[i].p.y/this.lc.dy)] === undefined ) {
+        alert( Math.floor(this.atoms[i].p.x/this.lc.dx) + ',' + 
+               Math.floor(this.atoms[i].p.y/this.lc.dy) + ' a[' + i + ']' );
+      }
       this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)][Math.floor(this.atoms[i].p.y/this.lc.dy)].push(i);
     }
   }
@@ -311,8 +319,8 @@ var jsmd = (function(){
   }
   Simulation.prototype.velocityVerlet = function() {
     var i,j;
-    var dt = 0.01;
-    var dr2 = 0.0;
+    var dt = this.dt;
+    var rmax = 0.0, vmax = 0.0, amax = 0.0;
 
     // first velocity verlet step
     var dp = new jsmd.Vector(), dp2;
@@ -325,17 +333,26 @@ var jsmd = (function(){
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
 
       // track maximum displacement
-      dp2 = dp.len2();
-      if( dp2 > dr2 ) { dr2 = dp2; }
+      rmax = Math.max( rmax, dp.len2() );
     }
 
-    this.updateNeighborlist(Math.sqrt(dr2));
+    this.updateNeighborlist(Math.sqrt(rmax));
     this.updateForces();
 
     // second velocity verlet step
     for( i = 0; i < this.atoms.length; ++i ) {
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+
+      // maximum velocity and acceleration
+      vmax = Math.max( vmax, this.atoms[i].v.len2() );
+      amax = Math.max( amax, this.atoms[i].f.len2()/(0.25*m*m) );
     }
+
+    // compute timestep
+    var dmax = 0.05;
+    vmax = Math.sqrt(vmax);
+    amax = Math.sqrt(amax);
+    this.dt = Math.min( dmax/vmax, Math.sqrt(2*dmax/amax) );
   }
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {

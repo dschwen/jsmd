@@ -274,8 +274,8 @@ var jsmd = (function(){
     // build up forces (newtonian)
     for( i = 0; i < this.atoms.length; ++i ) {
       //for( j = i+1; j < atoms.length; ++j ) {     // old iteration over all other atoms
-      for( k = 0; k < this.nl.data.length; ++k ) {  // new iteration over neighborlist
-        j = this.nl.data[k];
+      for( k = 0; k < this.nl.data[i].length; ++k ) {  // new iteration over neighborlist
+        j = this.nl.data[i][k];
 
         rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
         dr = rvec.pbclen( this.w, this.h );
@@ -414,7 +414,7 @@ var jsmd = (function(){
     Vector : Vector,
     Simulation : Simulation,
 
-    renderer : {
+    render : {
       atoms : renderAtoms,
       barriers : renderBarriers,
       forces : renderForces

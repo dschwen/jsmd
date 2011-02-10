@@ -441,7 +441,14 @@ var jsmd = (function(){
     var rm12 = 1.0;
     return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
   }
-
+  function forceMorse(r,t) {
+    //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
+    var De = 1.0;
+    var re = 1.0; // 0.5*(t[0].re+t[1].re)
+    var a = 1.0; // Math.sqrt(ke/(2*De))
+    var ex = Math.exp(-a*(r-re));
+    return 2*a*De*(1-ex)*ex;
+  }
 
   // export public interface
   return {
@@ -457,7 +464,8 @@ var jsmd = (function(){
       forces : renderForces
     },
     force : {
-      lennardJones : forceLJ
+      lennardJones : forceLJ,
+      morse : forceMorse
     }
   };
 })();

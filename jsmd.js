@@ -44,8 +44,12 @@ var jsmd = (function(){
     return dx*dx + dy*dy;
   }
   Vector.prototype.wrap = function(w,h) {
-    this.x = (this.x+w)%w;
-    this.y = (this.y+h)%h;
+    this.x -= Math.floor(this.x/w) * w;
+    this.y -= Math.floor(this.y/h) * h;
+  }
+  Vector.prototype.dwrap = function(w,h) {
+    this.x -= Math.round(this.x/w) * w;
+    this.y -= Math.round(this.y/h) * h;
   }
   Vector.sub = function(a,b) {
     return new Vector( a.x-b.x, a.y-b.y );
@@ -117,7 +121,7 @@ var jsmd = (function(){
 
     // colinear vector
     this.c = new Vector( x2-x1, y2-y1 );
-    this.l = this.c.len(); // length
+    this.l = this.c.pbclen(); // length
     this.c.scale(1.0/this.l);
 
     // default interation type
@@ -160,6 +164,9 @@ var jsmd = (function(){
 
     // neighborlist data
     this.nl = { dr : 0.0, data : [] };
+
+    // timestep data
+    this.dt = 0.01;
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -203,8 +210,11 @@ var jsmd = (function(){
     this.clearLinkcell();
 
     // repopulate with all atoms
+    var lx, ly;
     for( i = 0; i < this.atoms.length; ++i ) {
-      this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)][Math.floor(this.atoms[i].p.y/this.lc.dy)].push(i);
+      lx = Math.floor(this.atoms[i].p.x/this.lc.dx) % this.lc.nx;
+      ly = Math.floor(this.atoms[i].p.y/this.lc.dy) % this.lc.ny;
+      this.lc.data[lx][ly].push(i);
     }
   }
   Simulation.prototype.clearNeighborlist = function() {
@@ -278,7 +288,8 @@ var jsmd = (function(){
         j = this.nl.data[i][k];
 
         rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
-        dr = rvec.pbclen( this.w, this.h );
+        rvec.dwrap( this.w, this.h );
+        dr = rvec.len();
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.atoms[j].t];
           if( f !== undefined ) {
@@ -296,7 +307,7 @@ var jsmd = (function(){
       for( j = 0; j < this.barriers.length; ++j ) {
         // find distance to barrier
         rvec = this.barriers[j].dist(this.atoms[i].p);
-        dr = rvec.len();
+        dr = rvec.pbclen();
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.barriers[j].t];
           if( f !== undefined ) {
@@ -311,8 +322,8 @@ var jsmd = (function(){
   }
   Simulation.prototype.velocityVerlet = function() {
     var i,j;
-    var dt = 0.01;
-    var dr2 = 0.0;
+    var dt = this.dt;
+    var rmax = 0.0, vmax = 0.0, amax = 0.0;
 
     // first velocity verlet step
     var dp = new jsmd.Vector(), dp2;
@@ -325,17 +336,26 @@ var jsmd = (function(){
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
 
       // track maximum displacement
-      dp2 = dp.len2();
-      if( dp2 > dr2 ) { dr2 = dp2; }
+      rmax = Math.max( rmax, dp.len2() );
     }
 
-    this.updateNeighborlist(Math.sqrt(dr2));
+    this.updateNeighborlist(Math.sqrt(rmax));
     this.updateForces();
 
     // second velocity verlet step
     for( i = 0; i < this.atoms.length; ++i ) {
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+
+      // maximum velocity and acceleration
+      vmax = Math.max( vmax, this.atoms[i].v.len2() );
+      amax = Math.max( amax, this.atoms[i].f.len2()/(0.25*m*m) );
     }
+
+    // compute timestep
+    var dmax = 0.1;
+    vmax = Math.sqrt(vmax);
+    amax = Math.sqrt(amax);
+    //this.dt = Math.max( 0.0005, Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) ) );
   }
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {
@@ -364,14 +384,33 @@ var jsmd = (function(){
 
   // built-in render routines
   function renderAtoms(c) {
-    // draw nuclei
-    c.strokeStyle = "rgba(0,100,0,0.5)";
-    for( var i = 0; i < this.atoms.length; ++i ) {
-      c.fillStyle = this.types[this.atoms[i].t].color;
+    function drawAtom(x,y,r) {
       c.beginPath();
-      c.arc( this.atoms[i].p.x, this.atoms[i].p.y, this.types[this.atoms[i].t].r, 0, Math.PI*2.0, true);
+      c.arc( x, y, r, 0, Math.PI*2.0, true);
       c.closePath();
       c.fill();
+    }
+    // draw nuclei
+    c.strokeStyle = "rgba(0,100,0,0.5)";
+    var x,y,r;
+    for( var i = 0; i < this.atoms.length; ++i ) {
+      c.fillStyle = this.types[this.atoms[i].t].color;
+      x = this.atoms[i].p.x;
+      y = this.atoms[i].p.y;
+      r = this.types[this.atoms[i].t].r;
+
+      // draw atom
+      drawAtom(x,y,r);
+
+      // draw wrap-around copies
+      if( x <= r || y <= r || x+r > this.w || y+r > this.h ) {
+        if( x <= r ) drawAtom(x+this.w,y,r);
+        if( y <= r ) drawAtom(x,y+this.h,r);
+        if( x <= r &&  y <= r ) drawAtom(x+this.w,y+this.h,r);
+        if( x+r > this.w ) drawAtom(x-this.w,y,r);
+        if( y+r > this.h ) drawAtom(x,y-this.h,r);
+        if( x+r > this.w && y+r > this.h) drawAtom(x-this.w,y-this.h,r);
+      }
     }
   }
   function renderBarriers(c) {
@@ -388,10 +427,11 @@ var jsmd = (function(){
   function renderForces(c) {
     // draw forces
     c.strokeStyle = "rgba(0,100,0,0.5)";
+    c.lineWidth = 0.01;
     for( var i = 0; i < this.atoms.length; ++i ) {
       c.beginPath();
       c.moveTo( this.atoms[i].p.x, this.atoms[i].p.y );
-      c.lineTo( this.atoms[i].p.x + this.atoms[i].f.x * 0.1, this.atoms[i].p.y + this.atoms[i].f.y * 0.1 );
+      c.lineTo( this.atoms[i].p.x + this.atoms[i].f.x * 0.01, this.atoms[i].p.y + this.atoms[i].f.y * 0.01 );
       c.closePath();
       c.stroke();
     }

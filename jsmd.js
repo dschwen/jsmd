@@ -163,12 +163,12 @@ var jsmd = (function(){
     this.lc = {};
 
     // neighborlist data
-    this.nl = { dr : 0.0, data : [] };
+    this.nl = { dr : 0.0, data : [], count : 0 };
 
     // timestep data
-    this.dt = 0.01;
-    this.step = 0;
-    this.time = 0.0;
+    this.dt = 0.0;   // set by dynamic timestepper
+    this.step = 0;   // number of current MD step
+    this.time = 0.0; // expired simulation time
 
     // initialize option structure (exported to jsmd.options)
     this.options = {
@@ -238,9 +238,11 @@ var jsmd = (function(){
   }
   Simulation.prototype.updateNeighborlist = function(dr) {
     // check if update is necessary (call without parameter to force update)
-    this.nl.dr += 2.0*dr;
-    if( dr !== undefined && this.nl.dr < this.rp ) { 
-      return;
+    if( dr !== undefined ) {
+      this.nl.dr += 2.0*dr;
+      if( this.nl.dr > this.rp ) { 
+        return;
+      }
     }
 
     // update Linkcells first
@@ -284,6 +286,9 @@ var jsmd = (function(){
         // end local cell
       }
     }
+
+    // increase update counter
+    this.nl.count++;
   }
   Simulation.prototype.updateForces = function() {
     var i,j,k;  // integer

@@ -141,7 +141,7 @@ var jsmd = (function(){
   }
 
   // Simulation constructor (this contains all the important logic)
-  function Simulation(w,h) {
+  function Simulation(w,h, options) {
     this.atoms    = []; // list of atoms
     this.barriers = []; // list of barriers
     this.types    = []; // list of atom types
@@ -167,6 +167,20 @@ var jsmd = (function(){
 
     // timestep data
     this.dt = 0.01;
+    this.step = 0;
+    this.time = 0.0;
+
+    // initialize option structure (exported to jsmd.options)
+    this.options = {
+      morse : {
+        a  : 2.0,
+        De : 1.0,
+        re : 1.5
+      }
+    }
+    if( typeof options === 'Object' ) {
+      // copy properties
+    }
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -184,9 +198,9 @@ var jsmd = (function(){
     this.rp = rp;
     this.rc = rc;
 
-    // number and size of cells
-    this.lc.nx = Math.floor(this.w/rm);
-    this.lc.ny = Math.floor(this.h/rm);
+    // number and size of cells (have at least 3 cells in each direction)
+    this.lc.nx = Math.max( 3, Math.floor(this.w/rm) );
+    this.lc.ny = Math.max( 3, Math.floor(this.h/rm) );
     this.lc.dx = this.w/this.lc.nx;
     this.lc.dy = this.h/this.lc.ny;
 
@@ -211,7 +225,7 @@ var jsmd = (function(){
 
     // repopulate with all atoms
     var lx, ly;
-    for( i = 0; i < this.atoms.length; ++i ) {
+    for( var i = 0; i < this.atoms.length; ++i ) {
       lx = Math.floor(this.atoms[i].p.x/this.lc.dx) % this.lc.nx;
       ly = Math.floor(this.atoms[i].p.y/this.lc.dy) % this.lc.ny;
       this.lc.data[lx][ly].push(i);
@@ -237,7 +251,8 @@ var jsmd = (function(){
 
     var i,j,i2,j2,k,l,m;
     var ka, la;
-    var n = [ [0,1],[1,this.h-1],[1,0],[1,1] ]; // half the neighbors
+    var n = [ [0,1],[1,this.lc.ny-1],[1,0],[1,1] ]; // half the neighbors
+
     // loop over all cells
     for( i = 0; i < this.lc.nx; ++i ) {
       for( j = 0; j < this.lc.ny; ++j ) {
@@ -252,6 +267,7 @@ var jsmd = (function(){
               this.nl.data[ka].push(la);
             }
           }
+
           // loop over half the neighbor cells
           for( m = 0; m < n.length; ++m ) {
             i2 = (i+n[m][0]) % this.lc.nx;
@@ -293,7 +309,7 @@ var jsmd = (function(){
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.atoms[j].t];
           if( f !== undefined ) {
-            F = f( dr, [ this.atoms[i].t, this.atoms[j].t ] );
+            F = f.call( this, dr, [ this.atoms[i].t, this.atoms[j].t ] );
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
             this.atoms[j].f.sub(rvec);
@@ -311,7 +327,7 @@ var jsmd = (function(){
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.barriers[j].t];
           if( f !== undefined ) {
-            F = f( dr, [ this.atoms[i].t, this.barriers[j].t ] );
+            F = f.call( this, dr, [ this.atoms[i].t, this.barriers[j].t ] );
             //$('#mdlog').text(dr+','+f);
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
@@ -346,16 +362,23 @@ var jsmd = (function(){
     for( i = 0; i < this.atoms.length; ++i ) {
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
 
+      // linear drag term
+      this.atoms[i].v.scale(0.995);
+
       // maximum velocity and acceleration
       vmax = Math.max( vmax, this.atoms[i].v.len2() );
       amax = Math.max( amax, this.atoms[i].f.len2()/(0.25*m*m) );
     }
 
+    // increase step counters
+    this.step++;
+    this.time += dt;
+
     // compute timestep
-    var dmax = 0.1;
+    var dmax = 0.025;
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
-    //this.dt = Math.max( 0.0005, Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) ) );
+    this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
   }
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {
@@ -439,12 +462,17 @@ var jsmd = (function(){
 
   // built-in force functions
   function forceLJ(r,t) {
+    r /= 4;
     var e = 10.0;
     var rm6 = 1.0;
     var rm12 = 1.0;
     return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
   }
-
+  function forceMorse(r,t) {
+    //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
+    var ex = Math.exp(-this.options.morse.a*(r-this.options.morse.re));
+    return 2.0 * this.options.morse.a * this.options.morse.De * (1-ex) * ex;
+  }
 
   // export public interface
   return {
@@ -460,7 +488,9 @@ var jsmd = (function(){
       forces : renderForces
     },
     force : {
-      lennardJones : forceLJ
-    }
+      lennardJones : forceLJ,
+      morse : forceMorse
+    },
+    options : this.options
   };
 })();

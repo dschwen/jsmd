@@ -352,10 +352,10 @@ var jsmd = (function(){
     }
 
     // compute timestep
-    var dmax = 0.1;
+    var dmax = 0.01;
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
-    //this.dt = Math.max( 0.0005, Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) ) );
+    this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
   }
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {
@@ -439,6 +439,7 @@ var jsmd = (function(){
 
   // built-in force functions
   function forceLJ(r,t) {
+    r /= 4;
     var e = 10.0;
     var rm6 = 1.0;
     var rm12 = 1.0;

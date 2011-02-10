@@ -47,6 +47,10 @@ var jsmd = (function(){
     this.x -= Math.floor(this.x/w) * w;
     this.y -= Math.floor(this.y/h) * h;
   }
+  Vector.prototype.dwrap = function(w,h) {
+    this.x -= Math.round(this.x/w) * w;
+    this.y -= Math.round(this.y/h) * h;
+  }
   Vector.sub = function(a,b) {
     return new Vector( a.x-b.x, a.y-b.y );
   }
@@ -206,13 +210,11 @@ var jsmd = (function(){
     this.clearLinkcell();
 
     // repopulate with all atoms
+    var lx, ly;
     for( i = 0; i < this.atoms.length; ++i ) {
-      if( this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)] === undefined ||
-          this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)][Math.floor(this.atoms[i].p.y/this.lc.dy)] === undefined ) {
-        alert( Math.floor(this.atoms[i].p.x/this.lc.dx) + ',' + 
-               Math.floor(this.atoms[i].p.y/this.lc.dy) + ' a[' + i + ']' );
-      }
-      this.lc.data[Math.floor(this.atoms[i].p.x/this.lc.dx)][Math.floor(this.atoms[i].p.y/this.lc.dy)].push(i);
+      lx = Math.floor(this.atoms[i].p.x/this.lc.dx) % this.lc.nx;
+      ly = Math.floor(this.atoms[i].p.y/this.lc.dy) % this.lc.ny;
+      this.lc.data[lx][ly].push(i);
     }
   }
   Simulation.prototype.clearNeighborlist = function() {
@@ -286,7 +288,8 @@ var jsmd = (function(){
         j = this.nl.data[i][k];
 
         rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
-        dr = rvec.pbclen( this.w, this.h );
+        rvec.dwrap( this.w, this.h );
+        dr = rvec.len();
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.atoms[j].t];
           if( f !== undefined ) {
@@ -349,10 +352,10 @@ var jsmd = (function(){
     }
 
     // compute timestep
-    var dmax = 0.1;
+    var dmax = 0.01;
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
-    //this.dt = Math.max( 0.0005, Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) ) );
+    this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
   }
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {
@@ -400,13 +403,13 @@ var jsmd = (function(){
       drawAtom(x,y,r);
 
       // draw wrap-around copies
-      if( x <= r || y <= r || x+r > this.w || y+r < this.h ) {
+      if( x <= r || y <= r || x+r > this.w || y+r > this.h ) {
         if( x <= r ) drawAtom(x+this.w,y,r);
         if( y <= r ) drawAtom(x,y+this.h,r);
         if( x <= r &&  y <= r ) drawAtom(x+this.w,y+this.h,r);
         if( x+r > this.w ) drawAtom(x-this.w,y,r);
-        if( y+r < this.h ) drawAtom(x,y-this.h,r);
-        if( x+r > this.w && y+r < this.h) drawAtom(x-this.w,y-this.h,r);
+        if( y+r > this.h ) drawAtom(x,y-this.h,r);
+        if( x+r > this.w && y+r > this.h) drawAtom(x-this.w,y-this.h,r);
       }
     }
   }
@@ -436,6 +439,7 @@ var jsmd = (function(){
 
   // built-in force functions
   function forceLJ(r,t) {
+    r /= 4;
     var e = 10.0;
     var rm6 = 1.0;
     var rm12 = 1.0;

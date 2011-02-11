@@ -199,6 +199,7 @@ var jsmd = (function(){
     this.rm2 = rm*rm; // safe distance squared (for fast neighborlist builds)
     this.rp = rp;
     this.rc = rc;
+    this.rc2 = rc*rc;
 
     // number and size of cells (have at least 3 cells in each direction)
     this.lc.nx = Math.max( 3, Math.floor(this.w/rm) );
@@ -313,8 +314,9 @@ var jsmd = (function(){
 
         rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
         rvec.dwrap( this.w, this.h );
-        dr = rvec.len();
-        if( dr < this.rc ) {
+        dr = rvec.len2();
+        if( dr < this.rc2 ) {
+          dr = Math.sqrt(dr);
           f = this.interaction[this.atoms[i].t][this.atoms[j].t];
           if( f !== undefined ) {
             F = f.call( this, dr, [ this.atoms[i].t, this.atoms[j].t ] );

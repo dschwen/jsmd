@@ -11,8 +11,8 @@ var jsmd = (function(){
     return this.x * this.x + this.y * this.y;
   }
   Vector.prototype.pbclen = function(w,h) {
-    var dx = this.x - Math.round(this.x/w) * w;
-    var dy = this.y - Math.round(this.y/h) * h;
+    var dx = this.x - Math.round(this.x/w) * w,
+        dy = this.y - Math.round(this.y/h) * h;
     return Math.sqrt( dx*dx + dy*dy );
   }
   Vector.prototype.normalize = function() {
@@ -30,16 +30,16 @@ var jsmd = (function(){
     return (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
   }
   Vector.pbcdistance = function(a,b,w,h) {
-    var dx = a.x-b.x; 
+    var dx = a.x-b.x,
+        dy = a.y-b.y;
     dx -= Math.round(dx/w) * w;
-    var dy = a.y-b.y;
     dy -= Math.round(dy/h) * h;
     return Math.sqrt( dx*dx + dy*dy );
   }
   Vector.pbcdistance2 = function(a,b,w,h) {
-    var dx = a.x-b.x; 
+    var dx = a.x-b.x,
+        dy = a.y-b.y;
     dx -= Math.round(dx/w) * w;
-    var dy = a.y-b.y;
     dy -= Math.round(dy/h) * h;
     return dx*dx + dy*dy;
   }
@@ -128,8 +128,9 @@ var jsmd = (function(){
     this.t = 0;
   }
   Barrier.prototype.dist = function(a) {
-    var sv = new Vector( this.p[0].x - a.x, this.p[0].y - a.y );
-    var s = -(sv.x*this.c.x + sv.y*this.c.y);
+    var sv = new Vector( this.p[0].x - a.x, this.p[0].y - a.y ),
+        s = -(sv.x*this.c.x + sv.y*this.c.y);
+
     if( s <= 0 ) { // return vector to endpoint 0
       return sv;
     } else if( s >= this.l ) { // return vector to endpoint 1
@@ -193,7 +194,8 @@ var jsmd = (function(){
   }
   Simulation.prototype.setCutOff = function(rc,rp) {
     // initialize linkcells
-    var rm = rc+rp;
+    var rm = rc+rp,
+        i, l;
     this.rm2 = rm*rm; // safe distance squared (for fast neighborlist builds)
     this.rp = rp;
     this.rc = rc;
@@ -205,16 +207,17 @@ var jsmd = (function(){
     this.lc.dy = this.h/this.lc.ny;
 
     // build the 2D linkcell grid
-    var l = new Array(this.lc.nx);
-    for( var i = 0; i < this.lc.nx; ++i ) {
+    l = new Array(this.lc.nx);
+    for( i = 0; i < this.lc.nx; ++i ) {
       l[i] = new Array(this.lc.ny);
     }
     this.lc.data = l;
   }
   Simulation.prototype.clearLinkcell = function() {
     // clear each cell
-    for( var i = 0; i < this.lc.nx; ++i ) {
-      for( var j = 0; j < this.lc.ny; ++j ) {
+    var i,j;
+    for( i = 0; i < this.lc.nx; ++i ) {
+      for( j = 0; j < this.lc.ny; ++j ) {
         this.lc.data[i][j] = [];
       }
     }
@@ -224,15 +227,15 @@ var jsmd = (function(){
     this.clearLinkcell();
 
     // repopulate with all atoms
-    var lx, ly;
-    for( var i = 0; i < this.atoms.length; ++i ) {
+    var lx, ly, i;
+    for( i = 0; i < this.atoms.length; ++i ) {
       lx = Math.floor(this.atoms[i].p.x/this.lc.dx) % this.lc.nx;
       ly = Math.floor(this.atoms[i].p.y/this.lc.dy) % this.lc.ny;
       this.lc.data[lx][ly].push(i);
     }
   }
   Simulation.prototype.clearNeighborlist = function() {
-    for( i = 0; i < this.atoms.length; ++i ) {
+    for( var i = 0; i < this.atoms.length; ++i ) {
       this.nl.data[i] = [];
     }
   }
@@ -251,15 +254,15 @@ var jsmd = (function(){
     // clear Neigborlist
     this.clearNeighborlist()
 
-    var i,j,i2,j2,k,l,m;
-    var ka, la;
-    var n = [ [0,1],[1,this.lc.ny-1],[1,0],[1,1] ]; // half the neighbors
+    var i,j,i2,j2,k,l,m,
+        ka, la, ll,
+        n = [ [0,1],[1,this.lc.ny-1],[1,0],[1,1] ]; // half the neighbors
 
     // loop over all cells
     for( i = 0; i < this.lc.nx; ++i ) {
       for( j = 0; j < this.lc.ny; ++j ) {
         // loop over all atoms in local cell
-        var ll = this.lc.data[i][j].length;
+        ll = this.lc.data[i][j].length;
         for( k = 0; k < ll; ++k ) {
           // loop over remaining atoms in local cell
           ka = this.lc.data[i][j][k];
@@ -291,10 +294,10 @@ var jsmd = (function(){
     this.nl.count++;
   }
   Simulation.prototype.updateForces = function() {
-    var i,j,k;  // integer
-    var F,dr; // float
-    var f; // function
-    var rvec; // Vector
+    var i,j,k,  // integer
+        F,dr, // float
+        f, // function
+        rvec; // Vector
 
     // zero forces set timestep
     for( i = 0; i < this.atoms.length; ++i ) {
@@ -342,14 +345,14 @@ var jsmd = (function(){
     }
   }
   Simulation.prototype.velocityVerlet = function() {
-    var i,j;
-    var dt = this.dt;
-    var rmax = 0.0, vmax = 0.0, amax = 0.0;
+    var i,
+        dt = this.dt, m,
+        dmax, rmax = 0.0, vmax = 0.0, amax = 0.0,
+        dp = new jsmd.Vector();
 
     // first velocity verlet step
-    var dp = new jsmd.Vector(), dp2;
     for( i = 0; i < this.atoms.length; ++i ) {
-      var m = this.types[this.atoms[i].t].m;
+      m = this.types[this.atoms[i].t].m;
       dp.set( this.atoms[i].v ); dp.scale(dt); // dp = v*dt
       dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt*dt) );
       this.atoms[i].p.add(dp);
@@ -380,7 +383,7 @@ var jsmd = (function(){
     this.time += dt;
 
     // compute timestep
-    var dmax = 0.025;
+    dmax = 0.025;
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
     this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
@@ -394,8 +397,8 @@ var jsmd = (function(){
     };
   }
   Simulation.prototype.draw = function() {
-    var c = this.canvas.ctx;
-    var i;
+    var c = this.canvas.ctx,
+        i;
 
     // setup transform
     c.setTransform( this.canvas.w/this.w, 0,0, this.canvas.h/this.h, 0,0 );
@@ -412,16 +415,18 @@ var jsmd = (function(){
 
   // built-in render routines
   function renderAtoms(c) {
+    var x,y,r,i;
+
     function drawAtom(x,y,r) {
       c.beginPath();
       c.arc( x, y, r, 0, Math.PI*2.0, true);
       c.closePath();
       c.fill();
     }
+
     // draw nuclei
     c.strokeStyle = "rgba(0,100,0,0.5)";
-    var x,y,r;
-    for( var i = 0; i < this.atoms.length; ++i ) {
+    for( i = 0; i < this.atoms.length; ++i ) {
       c.fillStyle = this.types[this.atoms[i].t].color;
       x = this.atoms[i].p.x;
       y = this.atoms[i].p.y;
@@ -443,8 +448,9 @@ var jsmd = (function(){
   }
   function renderBarriers(c) {
     // draw barriers
+    var i;
     c.strokeStyle = "rgba(0,0,100,1)";
-    for( var i = 0; i < this.barriers.length; ++i ) {
+    for( i = 0; i < this.barriers.length; ++i ) {
       c.beginPath();
       c.moveTo( this.barriers[i].p[0].x, this.barriers[i].p[0].y );
       c.lineTo( this.barriers[i].p[1].x, this.barriers[i].p[1].y );
@@ -454,9 +460,10 @@ var jsmd = (function(){
   }
   function renderForces(c) {
     // draw forces
+    var i;
     c.strokeStyle = "rgba(0,100,0,0.5)";
     c.lineWidth = 0.01;
-    for( var i = 0; i < this.atoms.length; ++i ) {
+    for( i = 0; i < this.atoms.length; ++i ) {
       c.beginPath();
       c.moveTo( this.atoms[i].p.x, this.atoms[i].p.y );
       c.lineTo( this.atoms[i].p.x + this.atoms[i].f.x * 0.01, this.atoms[i].p.y + this.atoms[i].f.y * 0.01 );
@@ -467,10 +474,10 @@ var jsmd = (function(){
 
   // built-in force functions
   function forceLJ(r,t) {
+    var e = 10.0,
+        rm6 = 1.0,
+        rm12 = 1.0;
     r /= 4;
-    var e = 10.0;
-    var rm6 = 1.0;
-    var rm12 = 1.0;
     return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
   }
   function forceMorse(r,t) {

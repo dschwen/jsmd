@@ -1,0 +1,160 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>jsMD example</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../jsmd.js"></script>
+    <script type="text/javascript" src="../lib/jquery-1.4.4.min.js"></script>
+    </script>
+    <style>
+      /*#simcan { float : left; }*/
+      div.play {
+        border-radius: 7px;
+        -moz-border-radius: 7px;
+        padding: 2px;
+        background-color: black;
+        width: 4em;
+        opacity: 0.35;
+        margin: auto;
+      }
+      div.play > div {
+        border-radius: 5px;
+        -moz-border-radius: 5px;
+        border: 2px solid white;
+        text-align: center;
+        color: white;
+        font-size: 400%;
+        line-height: 0.5;
+        padding-top: 0.09em;
+      }
+      div.centerbox {
+        position: absolute;
+        top: 0px; left :0px;
+        width: 100%; height: 100%;
+        display: -webkit-box;
+        -webkit-box-orient: horizontal;
+        -webkit-box-pack: center;
+        -webkit-box-align: center;
+
+        display: -moz-box;
+        -moz-box-orient: horizontal;
+        -moz-box-pack: center;
+        -moz-box-align: center;
+
+        display: box;
+        box-orient: horizontal;
+        box-pack: center;
+        box-align: center;
+      }
+    </style>
+  <body>
+    <div id="cancon" style="position: relative; width: 625px; height: 500px;">
+      <canvas id="simcan" width="625" height="500"></canvas>
+      <div class="centerbox">
+        <div id="playbutton" class="play"><div>&#8227;</div></div>
+      </div>
+    </div>
+    <div id="log"></div>
+    <script type="text/javascript">
+      function renderPKA(c) {
+        c.strokeStyle = "rgb(255,0,255)";
+        c.lineWidth = 0.03;
+        c.beginPath();
+        c.moveTo( this.pkapos[0][0], this.pkapos[0][1] );
+        for( var i = 1; i < this.pkapos.length; ++i ) {
+          c.lineTo( this.pkapos[i][0], this.pkapos[i][1] );
+        }
+        //c.closePath();
+        c.stroke();
+      }
+
+      var ss = 20;
+      var sim = new jsmd.Simulation(ss,ss*0.8);
+      sim.setCanvas(document.getElementById('simcan'));
+
+      var t;
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      sim.types.push(t);
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      t.m = 1;
+      t.color = 'rgb(0,200,0)';
+      sim.types.push(t);
+
+      var c = 0, a, pka;
+      for( var y = 0; y < ss; ++y ) {
+        for( var x = 0; x < ss; x+=1 ) {
+          a = new jsmd.Atom((x+c/2),y*0.8);
+          if( x == 5 && y == 8 ) {
+            a.v.x = 50;
+            a.v.y = 10;
+            a.t = 1;
+            pka = a;
+          }
+          a.p.wrap(ss,ss*0.8);
+          sim.atoms.push(a);
+        }
+        c = 1.0-c;
+      }
+
+      var tabulatedMorse = (function() {
+        // parameters and pretabulated values stored in closure
+        var mul = 100;
+        var cut = 4.0;
+        var table = [];
+        for( var i = 0; i <= mul*cut+10; ++i ) {
+          table[i] = jsmd.force.morse.call(sim,i/mul);
+        }
+
+        // interpolation function (called from updateForces)
+        function interpolate(r,t) {
+          r *= mul;
+          var b = Math.floor(r);
+          r -= b;
+          return (1-r)*table[b] + r*table[b+1];
+        }
+
+        return interpolate;
+      } )();
+
+      sim.setCutOff(4.0,0.25);
+/*      sim.setInteraction( [0,0], jsmd.force.morse );
+      sim.setInteraction( [1,0], jsmd.force.morse );
+      sim.setInteraction( [1,1], jsmd.force.morse );*/
+      sim.setInteraction( [0,0], tabulatedMorse );
+      sim.setInteraction( [1,0], tabulatedMorse );
+      sim.setInteraction( [1,1], tabulatedMorse );
+      sim.updateNeighborlist();
+
+      sim.renderChain = [ jsmd.render.atoms, renderPKA ];
+
+      var count = 0;
+      sim.pkapos = [];
+      sim.pkapos.push( [pka.p.x,pka.p.y] );
+      sim.draw();
+      var simInterval;
+
+      $('#cancon').toggle(
+        function() { 
+          $('#playbutton').fadeOut();
+          simInterval = setInterval( function() {
+            // track position
+            if( count == 0 ) {
+              sim.pkapos.push( [pka.p.x,pka.p.y] );
+              count = 5;
+            }
+            count--;
+
+            sim.velocityVerlet();
+            sim.velocityVerlet();
+            sim.draw();
+          }, 1000/50 );
+        },
+        function() {
+          clearInterval(simInterval);
+          $('#playbutton').fadeIn();
+        } );
+    </script>
+  </body>
+</html>

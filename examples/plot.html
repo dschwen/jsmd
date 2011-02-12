@@ -1,0 +1,29 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>jsMD example</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../jsmd.js"></script>
+    <script type="text/javascript" src="../lib/jquery-1.4.4.min.js"></script>
+    <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
+  <body>
+    <div id="plot" style="width: 800px; height: 600px;">
+    </div>
+    <script type="text/javascript">
+      function tab( f, min, max, step ) {
+        var i, j = [];
+        for( i = min; i <= max; i += step ) {
+          j.push([i,f(i)]);
+        }
+        return j; 
+      }
+
+      // tabulate the morse potential with all default options
+      var force1 = jsmd.force.tabulated( jsmd.force.morse() );
+      var force2 = jsmd.force.morse();
+
+      $.plot( $('#plot'), [ { data: tab( force1, 1.844, 1.849, 0.0001 ), color : 'rgb(200,0,0)', label : 'Morse tabulated' },
+                            { data: tab( force2, 1.844, 1.849, 0.0001 ), color : 'rgb(0,200,0)', label : 'Morse' } ] );
+    </script>
+  </body>
+</html>

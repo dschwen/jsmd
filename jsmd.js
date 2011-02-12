@@ -531,7 +531,7 @@ var jsmd = (function(){
 
   // return numerical derivative of f
   function forceNumericalDiff( f, dr_ ) {
-    var dr = dr_ !== undefined ? dr_ : 0.0001,
+    var dr = dr_ !== undefined ? dr_ : 0.0001;
     
     function differentiate(r) {
        return 0.5 * ( f.call(this,r-dr) + f.call(this,r+dr) ) / dr;
@@ -546,6 +546,27 @@ var jsmd = (function(){
 
   // return force splined together from f1 for r<=r1, a spline for r1<r<=r2, and f2 for r2<r
   function forceSpline( f1, f1, r1, r2 ) {
+  }
+
+  // return ZBL energy (use with numerical diff)
+  function energyZBL( Z1, Z2 ) {
+    var a0 = 0.5,
+        a = 0.8854 * a0 / ( Math.pow(Z1,0.23) + Math.pow(Z2,0.23) ),
+        e0 = 1.0,
+        pre = 1/(4*Math.PI*e0) * Z1*Z2 * e*e,
+        A = [ 0.1818, 0.5099, 0.2802, 0.02817 ],
+        B = [ -3.2, -0.9423, -0.4029, -0.2016 ];
+
+    function calculateEnergy(r) {
+      var phi = 0.0,
+          i;
+      for( i = 0; i < 4; ++i ) {
+        phi += A[i]*Math.exp(B[i]*r/a);
+      }
+      return pre/r*phi;
+    }
+
+    return calculateEnergy;
   }
 
   //

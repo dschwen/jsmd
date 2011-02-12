@@ -232,10 +232,11 @@ var jsmd = (function(){
     // check if update is necessary (call without parameter to force update)
     if( dr !== undefined ) {
       this.nl.dr += 2.0*dr;
-      if( this.nl.dr > this.rp ) { 
+      if( this.nl.dr < this.rp ) { 
         return;
       }
     }
+    this.nl.dr = 0.0;
 
     // update Linkcells first
     this.updateLinkcell()

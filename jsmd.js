@@ -403,7 +403,12 @@ var jsmd = (function(){
     }
   }
 
+
+  //
   // built-in render routines
+  //
+
+  // render atoms as disks with radii and colors determined by type
   function renderAtoms(c) {
     var x,y,r,i;
 
@@ -436,6 +441,8 @@ var jsmd = (function(){
       }
     }
   }
+
+  // draw barriers as lines
   function renderBarriers(c) {
     // draw barriers
     var i;
@@ -448,6 +455,8 @@ var jsmd = (function(){
       c.stroke();
     }
   }
+
+  // visualize forces acting on individual atoms
   function renderForces(c) {
     // draw forces
     var i;
@@ -462,14 +471,27 @@ var jsmd = (function(){
     }
   }
 
+
+  //
   // built-in force functions
-  function forceLJ(r,t) {
-    var e = 10.0,
-        rm6 = 1.0,
-        rm12 = 1.0;
-    r /= 4;
-    return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
+  //
+
+  // Lennard-Jones potential for pair equilibrium distance re and well depth e
+  function forceLJ( rm_, e_ ) {
+    var e  = e_  !== undefined ? e_ : 10.0,
+        rm = rm_ !== undefined ? rm_ : 1.0,
+        rm6 = Math.pow(rm,6),
+        rm12 = rm6*rm6;
+
+    function calculateForce(r) {
+      r /= 4;
+      return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
+    }
+
+    return calculateForce;
   }
+
+  // Morse potential for pair equilibrium distance re, potential softness 1/a, and well depth De
   function forceMorse( re_, a_, De_ ) {
     //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
     var re = re_ !== undefined ? re_ : 1.5,
@@ -483,6 +505,8 @@ var jsmd = (function(){
 
     return calculateForce;
   }
+
+  // return a force linearly interpolated from tabulated values of function f (fast!)
   function forceTabulated(f, dr_, rc_ ) {
     // parameters and pretabulated values stored in closure
     var dr = dr_ !== undefined ? dr_ : 0.01,
@@ -491,7 +515,7 @@ var jsmd = (function(){
         table = [],
         i;
     for( i = 0; i <= mul*rc+10; ++i ) {
-      table[i] = f.call(sim,i/mul);
+      table[i] = f.call( this, i/mul );
     }
 
     // interpolation function (called from updateForces)
@@ -505,13 +529,34 @@ var jsmd = (function(){
     return interpolate;
   }
 
+  // return numerical derivative of f
+  function forceNumericalDiff( f, dr_ ) {
+    var dr = dr_ !== undefined ? dr_ : 0.0001,
+    
+    function differentiate(r) {
+       return 0.5 * ( f.call(this,r-dr) + f.call(this,r+dr) ) / dr;
+    }
+
+    return differentiate;
+  }
+
+  // ZBL fore function for nuclear charges Z1 and Z2
+  function forceZBL( Z1_, Z2_ ) {
+  }
+
+  // return force splined together from f1 for r<=r1, a spline for r1<r<=r2, and f2 for r2<r
+  function forceSpline( f1, f1, r1, r2 ) {
+  }
+
+  //
   // export public interface
+  //
   return {
     Atom : Atom,
     AtomType : AtomType,
     Barrier : Barrier,
-    Vector : Vector,
     Simulation : Simulation,
+    Vector : Vector,
 
     render : {
       atoms : renderAtoms,
@@ -521,8 +566,8 @@ var jsmd = (function(){
     force : {
       lennardJones : forceLJ,
       morse : forceMorse,
-      tabulated : forceTabulated
-    },
-    options : this.options
+      tabulated : forceTabulated,
+      diff : forceNumericalDiff
+    }
   };
 })();

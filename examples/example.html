@@ -128,33 +128,14 @@
         c = 1.0-c;
       }
 
-      var tabulatedMorse = (function() {
-        // parameters and pretabulated values stored in closure
-        var mul = 100;
-        var cut = 4.0;
-        var table = [];
-        for( var i = 0; i <= mul*cut+10; ++i ) {
-          table[i] = jsmd.force.morse.call(sim,i/mul);
-        }
-
-        // interpolation function (called from updateForces)
-        function interpolate(r,t) {
-          r *= mul;
-          var b = Math.floor(r);
-          r -= b;
-          return (1-r)*table[b] + r*table[b+1];
-        }
-
-        return interpolate;
-      } )();
-
       sim.setCutOff(4.0,0.5);
-/*      sim.setInteraction( [0,0], jsmd.force.morse );
-      sim.setInteraction( [1,0], jsmd.force.morse );
-      sim.setInteraction( [1,1], jsmd.force.morse );*/
-      sim.setInteraction( [0,0], tabulatedMorse );
-      sim.setInteraction( [1,0], tabulatedMorse );
-      sim.setInteraction( [1,1], tabulatedMorse );
+
+      // tabulate the morse potential with all default options
+      var force = jsmd.force.tabulated( jsmd.force.morse() );
+
+      sim.setInteraction( [0,0], force );
+      sim.setInteraction( [1,0], force );
+      sim.setInteraction( [1,1], force );
       sim.updateNeighborlist();
 
       sim.renderChain = [ jsmd.render.atoms, renderPKA ]; // , renderEnergies

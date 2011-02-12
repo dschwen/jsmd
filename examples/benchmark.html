@@ -1,0 +1,66 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>jsMD example</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../jsmd.js"></script>
+    <script type="text/javascript" src="../lib/jquery-1.4.4.min.js"></script>
+    </script>
+  <body>
+    <div id="status"></div>
+    <script type="text/javascript">
+      var ss = 20;
+      var sim = new jsmd.Simulation(ss,ss*0.8);
+
+      var t;
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      sim.types.push(t);
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      t.m = 1;
+      t.color = 'rgb(0,200,0)';
+      sim.types.push(t);
+
+      var c = 0, a, pka;
+      for( var y = 0; y < ss; ++y ) {
+        for( var x = 0; x < ss; x+=1 ) {
+          a = new jsmd.Atom((x+c/2),y*0.8);
+          if( x == 5 && y == 8 ) {
+            a.v.x = 50;
+            a.v.y = 10;
+            a.t = 1;
+            pka = a;
+          }
+          a.p.wrap(ss,ss*0.8);
+          sim.atoms.push(a);
+        }
+        c = 1.0-c;
+      }
+
+
+      sim.setCutOff(4.0,0.25);
+
+      // tabulate the morse potential with all default options
+      var force = jsmd.force.tabulated( jsmd.force.morse() );
+
+      sim.setInteraction( [0,0], force );
+      sim.setInteraction( [1,0], force );
+      sim.setInteraction( [1,1], force );
+      sim.updateNeighborlist();
+
+      var it = 10;
+      var then, now, ms;
+      $('#status').text('Running '+it+' MD cycles...');
+      setInterval( function() {
+        then = new Date();
+        for( var i = 0; i < it; ++i ) {
+          sim.velocityVerlet();
+        }
+        now = new Date();
+        ms = now.getTime() - then.getTime();
+        $('#status').text( $('#status').text() + ms + 'ms. ');
+      }, 1000 );
+    </script>
+  </body>
+</html>

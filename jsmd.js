@@ -170,18 +170,6 @@ var jsmd = (function(){
     this.dt = 0.0;   // set by dynamic timestepper
     this.step = 0;   // number of current MD step
     this.time = 0.0; // expired simulation time
-
-    // initialize option structure (exported to jsmd.options)
-    this.options = {
-      morse : {
-        a  : 2.0,
-        De : 1.0,
-        re : 1.5
-      }
-    }
-    if( typeof options === 'Object' ) {
-      // copy properties
-    }
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -482,10 +470,39 @@ var jsmd = (function(){
     r /= 4;
     return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
   }
-  function forceMorse(r,t) {
+  function forceMorse( re_, a_, De_ ) {
     //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
-    var ex = Math.exp(-this.options.morse.a*(r-this.options.morse.re));
-    return 2.0 * this.options.morse.a * this.options.morse.De * (1-ex) * ex;
+    var re = re_ !== undefined ? re_ : 1.5,
+        a  = a_  !== undefined ? a_  : 2.0,
+        De = De_ !== undefined ? De_ : 1.0;
+
+    function calculateForce(r) {
+      var ex = Math.exp( -a*(r-re) );
+      return 2.0 * a * De * (1-ex) * ex;
+    }
+
+    return calculateForce;
+  }
+  function forceTabulated(f, dr_, rc_ ) {
+    // parameters and pretabulated values stored in closure
+    var dr = dr_ !== undefined ? dr_ : 0.01,
+        rc = rc_ !== undefined ? rc_ : 10.0,
+        mul = rc/dr,
+        table = [],
+        i;
+    for( i = 0; i <= mul*rc+10; ++i ) {
+      table[i] = f.call(sim,i/mul);
+    }
+
+    // interpolation function (called from updateForces)
+    function interpolate(r,t) {
+      r *= mul;
+      var b = Math.floor(r);
+      r -= b;
+      return (1-r)*table[b] + r*table[b+1];
+    }
+
+    return interpolate;
   }
 
   // export public interface
@@ -503,7 +520,8 @@ var jsmd = (function(){
     },
     force : {
       lennardJones : forceLJ,
-      morse : forceMorse
+      morse : forceMorse,
+      tabulated : forceTabulated
     },
     options : this.options
   };

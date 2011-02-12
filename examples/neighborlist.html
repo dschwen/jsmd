@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>jsMD example</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../jsmd.js"></script>
+  <body>
+    <canvas id="simcan" width="625" height="500"></canvas>
+    <div id="log"></div>
+    <script type="text/javascript">
+      var pka_num;
+      function renderNl(c) {
+        // draw forces
+        c.strokeStyle = "rgba(0,100,0,0.5)";
+        c.lineWidth = 0.05;
+        for( var i = 0; i < this.atoms.length; ++i ) {
+          for( var k = 0; k < this.nl.data[i].length; ++k ) {
+            var j = this.nl.data[i][k];
+            if( i == pka_num || j == pka_num ) {
+              c.beginPath();
+              var dx = this.atoms[j].p.x - this.atoms[i].p.x;
+              var rx = Math.round(dx/this.w) * this.w;
+              dx -= rx;
+              var dy = this.atoms[j].p.y - this.atoms[i].p.y;
+              var ry = Math.round(dy/this.h) * this.h;
+              dy -= ry;
+              c.moveTo( this.atoms[i].p.x, this.atoms[i].p.y );
+              c.lineTo( this.atoms[i].p.x + dx, this.atoms[i].p.y + dy );
+              if( rx != 0 || ry != 0 ) {
+                c.moveTo( this.atoms[j].p.x, this.atoms[j].p.y );
+                c.lineTo( this.atoms[j].p.x - dx, this.atoms[j].p.y - dy );
+              }
+              c.stroke();
+            }
+          }
+        }
+      }
+
+      function renderPKA(c) {
+        c.strokeStyle = "rgb(255,0,255)";
+        c.lineWidth = 0.03;
+        c.beginPath();
+        c.moveTo( this.pkapos[0][0], this.pkapos[0][1] );
+        for( var i = 1; i < this.pkapos.length; ++i ) {
+          c.lineTo( this.pkapos[i][0], this.pkapos[i][1] );
+        }
+        //c.closePath();
+        c.stroke();
+      }
+
+      var sim = new jsmd.Simulation(15,15*0.8);
+      sim.setCanvas(document.getElementById('simcan'));
+
+      var t;
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      sim.types.push(t);
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      t.m = 1;
+      t.color = 'rgb(0,200,0)';
+      sim.types.push(t);
+
+      var c = 0, a, pka;
+      for( var y = 0; y < 15; ++y ) {
+        for( var x = 0; x < 15; x+=1 ) {
+          a = new jsmd.Atom((x+c/2),y*0.8);
+          if( x == 10 && y == 10 ) {
+            a.v.x = 40;
+            a.v.y = 8;
+            a.t = 1;
+            pka = a;
+            pka_num = sim.atoms.length;
+          }   
+          a.p.wrap(20,20*0.8);
+          sim.atoms.push(a);
+        }
+        c = 1.0-c;
+      }
+
+      sim.setCutOff(4.0,0.5);
+
+      // tabulate the morse potential with all default options
+      var force = jsmd.force.tabulated( jsmd.force.morse() );
+      sim.setInteraction( [0,0], force );
+      sim.setInteraction( [1,0], force );
+      sim.setInteraction( [1,1], force );
+      sim.updateNeighborlist();
+
+      sim.renderChain = [ jsmd.render.atoms, renderNl, renderPKA ];
+
+      var count = 0;
+      sim.pkapos = [];
+      setInterval( function() {
+        // track position
+        if( count == 0 ) {
+          sim.pkapos.push( [pka.p.x,pka.p.y] );
+          count = 5;
+        }
+        count--;
+
+        sim.velocityVerlet();
+        sim.velocityVerlet();
+        sim.draw();
+      }, 1000/50 );
+    </script>
+  </body>
+</html>

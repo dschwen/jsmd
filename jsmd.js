@@ -141,6 +141,18 @@ var jsmd = (function(){
     }
   }
 
+  // helper function to merge arguments with defaults
+  function mergeArgs( arg, def ) {
+    // no arguments supplied, just return defaults
+    if( arg === undefined ) {
+      return def;
+    }
+    // set unset options in arg to the defaults
+    for( i in def ) {
+      if( def.hasOwnProperty(i) ) {}
+    }
+  }
+
   // Simulation constructor (this contains all the important logic)
   function Simulation(w,h, options) {
     this.atoms    = []; // list of atoms

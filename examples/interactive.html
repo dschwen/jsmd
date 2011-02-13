@@ -53,6 +53,10 @@
         <div id="playbutton" class="play"><div>&#8227;</div></div>
       </div>
     </div>
+    <input type="button" value="reset" id="reset"/><br/>
+    <input id="dirslider" type="range"  min="0" max="720" value="90" style="width: 50%"/><label for="dirslider">kick direction</label>    
+    <input id="lenslider" type="range"  min="0" max="100" value="20" style="width: 50%"/><label for="lenslider">kick velocity</label><br/>
+    <input type="button" value="kick atom" id="kick"/>
     <div id="log"></div>
     <script type="text/javascript">
       function renderPKA(c) {
@@ -88,19 +92,70 @@
         for( var x = 0; x < ss; x+=1 ) {
           a = new jsmd.Atom((x+c/2),y*0.8);
           if( x == 5 && y == 8 ) {
-            a.v.x = 50;
-            a.v.y = 10;
-            a.t = 1;
             pka = a;
           }
-          a.p.wrap(ss,ss*0.8);
           sim.atoms.push(a);
         }
         c = 1.0-c;
       }
+      pka.t = 1;
+
+      // update kick vector
+      var vkick = new jsmd.Vector();
+      function updateKick() {
+        var len = $('#lenslider')[0].value;
+        var dir = $('#dirslider')[0].value / 180.0 * Math.PI;
+        vkick.x = Math.sin(dir) * len;
+        vkick.y = Math.cos(dir) * len;
+        sim.draw();
+      }
+      updateKick();
+      $('#lenslider').change(updateKick);
+      $('#dirslider').change(updateKick);
+
+      // render vkick
+      function renderKick(c) {
+        c.strokeStyle = "rgb(0,0,200)";
+        c.lineWidth = 0.03;
+        c.beginPath();
+        c.moveTo( pka.p.x, pka.p.y );
+        c.lineTo( pka.p.x + vkick.x*0.1, pka.p.y + vkick.y*0.1 );
+        c.stroke();
+      }
+
+      // reset positions and velocities
+      function reset() {
+        stopSim();
+        var c = 0, i = 0;
+        for( var y = 0; y < ss; ++y ) {
+          for( var x = 0; x < ss; ++x ) {
+            sim.atoms[i].p.x = x + c/2;
+            sim.atoms[i].p.y = y * 0.8;
+            sim.atoms[i].v.zero();
+            sim.atoms[i].f.zero();
+            sim.atoms[i].p.wrap(ss,ss*0.8);
+            i++;
+          }
+          c = 1.0-c;
+        }
+        sim.pkapos = [ [ pka.p.x, pka.p.y ] ];
+        sim.updateNeighborlist();
+        sim.draw();
+      }
+      $('#reset').click(reset);
+
+      // kick pka
+      $('#kick').click( function() { 
+        // deep copy!
+        pka.v.x = vkick.x; 
+        pka.v.y = vkick.y; 
+      } );
 
       // simulation cut off
       sim.setCutOff(4.0,0.25);
+
+      // set atom positions (also updates Neighborlist)
+      reset();
 
       // tabulate the morse potential with all default options
       var force = jsmd.force.tabulated( jsmd.force.morse() );
@@ -108,36 +163,46 @@
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
       sim.setInteraction( [1,1], force );
-      sim.updateNeighborlist();
 
-      sim.renderChain = [ jsmd.render.atoms, renderPKA ];
+      sim.renderChain = [ jsmd.render.atoms, renderPKA, renderKick ];
 
       var count = 0;
       sim.pkapos = [];
       sim.pkapos.push( [pka.p.x,pka.p.y] );
       sim.draw();
-      var simInterval;
 
-      $('#cancon').toggle(
-        function() { 
-          $('#playbutton').fadeOut();
-          simInterval = setInterval( function() {
-            // track position
-            if( count == 0 ) {
-              sim.pkapos.push( [pka.p.x,pka.p.y] );
-              count = 5;
-            }
-            count--;
+      // start stop sim
+      var simInterval = null;
+      function startSim() {
+        if( simInterval !== null ) { return; }
+        $('#playbutton').fadeOut();
+        simInterval = setInterval( function() {
+          // track position
+          if( count == 0 ) {
+            sim.pkapos.push( [pka.p.x,pka.p.y] );
+            count = 5;
+          }
+          count--;
 
-            sim.velocityVerlet();
-            sim.velocityVerlet();
-            sim.draw();
-          }, 1000/50 );
-        },
-        function() {
-          clearInterval(simInterval);
-          $('#playbutton').fadeIn();
-        } );
+          sim.velocityVerlet();
+          sim.velocityVerlet();
+          sim.draw();
+        }, 1000/50 );
+      }
+      function stopSim() {
+        if( simInterval === null ) { return; }
+        clearInterval(simInterval);
+        simInterval = null;
+        $('#playbutton').fadeIn();
+      }
+
+      $('#cancon').click( function() { 
+        if( simInterval === null ) { 
+          startSim(); 
+        } else {
+          stopSim();
+        } 
+      } );
     </script>
   </body>
 </html>

@@ -496,12 +496,10 @@ var jsmd = (function(){
         rm6 = Math.pow(rm,6),
         rm12 = rm6*rm6;
 
-    function calculateForce(r) {
+    return function(r) {
       r /= 4;
       return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
     }
-
-    return calculateForce;
   }
 
   // Morse potential for pair equilibrium distance re, potential softness 1/a, and well depth De
@@ -511,12 +509,10 @@ var jsmd = (function(){
         a  = a_  !== undefined ? a_  : 2.0,
         De = De_ !== undefined ? De_ : 1.0;
 
-    function calculateForce(r) {
+    return function(r) {
       var ex = Math.exp( -a*(r-re) );
       return 2.0 * a * De * (1-ex) * ex;
     }
-
-    return calculateForce;
   }
 
   // return a force linearly interpolated from tabulated values of function f (fast!)
@@ -532,25 +528,21 @@ var jsmd = (function(){
     }
 
     // interpolation function (called from updateForces)
-    function interpolate(r,t) {
+    return function(r) {
       r *= mul;
       var b = Math.floor(r);
       r -= b;
       return (1-r)*table[b] + r*table[b+1];
     }
-
-    return interpolate;
   }
 
   // return numerical derivative of f
   function forceNumericalDiff( f, dr_ ) {
     var dr = dr_ !== undefined ? dr_ : 0.0001;
     
-    function differentiate(r) {
-       return 0.5 * ( f.call(this,r-dr) + f.call(this,r+dr) ) / dr;
+    return function (r) {
+       return 0.5 * ( f.call(this,r+dr) - f.call(this,r-dr) ) / dr;
     }
-
-    return differentiate;
   }
 
   // ZBL fore function for nuclear charges Z1 and Z2

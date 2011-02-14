@@ -9,12 +9,17 @@
   <body>
     <div id="plot" style="width: 800px; height: 600px;">
     </div>
-    <input type="" id="plotselect">
+    <select id="plotselect">
+    <option value='0'>- Select plot -</option>
+    </select>
     <script type="text/javascript">
       function tab( f, min, max, step ) {
-        var i, j = [];
+        var i, j = [],y;
         for( i = min; i <= max; i += step ) {
-          j.push([i,f(i)]);
+          y = f(i);
+          //if( y > -50.0 && y < 50.0 ) { 
+            j.push([i,y]);
+          //}
         }
         return j; 
       }
@@ -26,8 +31,8 @@
       var force1 = jsmd.force.tabulated( jsmd.force.morse() );
       var force2 = jsmd.force.morse();
 
-      var zble = jsmd.energy.ZBL();
-      var zblf = jsmd.force.diff(jsmd.energy.ZBL);
+      var zble = jsmd.energy.ZBL(10,10);
+      var zblf = jsmd.force.diff(jsmd.energy.ZBL(10,10));
 
       var plots = [
         { name : 'Morse detail', func : function() { 
@@ -35,18 +40,21 @@
                                   { data: tab( force2, 1.844, 1.849, 0.0001 ), color : 'rgb(0,200,0)', label : 'Morse' } ] );
           } },
         { name : 'Lennard-Jones', func : function() { 
-            $.plot( $('#plot'), [ { data: tab( lj1, 1.844, 1.849, 0.0001 ), color : 'rgb(200,0,0)', label : 'Lennard-Jones tabulated' },
-                                  { data: tab( lj2, 1.844, 1.849, 0.0001 ), color : 'rgb(0,200,0)', label : 'Lennard-Jones' } ] );
+            $.plot( $('#plot'), [ { data: tab( lj1, 0.75, 5, 0.01 ), color : 'rgb(200,0,0)', label : 'Lennard-Jones tabulated' },
+                                  { data: tab( lj2, 0.75, 5, 0.01 ), color : 'rgb(0,200,0)', label : 'Lennard-Jones' },
+                                  { data: tab( zblf, 0.25, 5, 0.01 ), color : 'rgb(0,0,200)', label : 'ZBL' } ] );
           } },
-        { name : 'Morse', func : function() { 
-            $.plot( $('#plot'), [ { data: tab( force2, 0.1, 5.0, 0.02 ), color : 'rgb(200,0,0)', label : 'Morse' } ] );
+        { name : 'Morse and ZBL', func : function() { 
+            $.plot( $('#plot'), [ { data: tab( force2, 0.1, 5.0, 0.02 ), color : 'rgb(200,0,0)', label : 'Morse' },
+                                  { data: tab( zblf, 0.1, 5, 0.01 ), color : 'rgb(0,200,0)', label : 'ZBL' } ] );
           } },
-        { name : 'ZBL', func : function() { 
-            $.plot( $('#plot'), [ { data: tab( zble, 1.844, 1.849, 0.0001 ), color : 'rgb(200,0,0)', label : 'energy' },
-                                  { data: tab( zblf, 1.844, 1.849, 0.0001 ), color : 'rgb(0,200,0)', label : 'force' } ] );
+        { name : 'ZBL energy', func : function() { 
+            $.plot( $('#plot'), [ { data: tab( zble, 1, 5, 0.01 ), color : 'rgb(200,0,0)', label : 'energy' } ] );
           } } ];
-      $(plots).each( function(i,e) { $(plotselect).append(); } );
-      $('#plotselect').change( function() {} );
+      $(plots).each( function(i,e) { $(plotselect).append('<option value='+i+'>'+e.name+'</option>'); } );
+      $('#plotselect').change( function() {
+        plots[$("#plotselect option:selected").val()].func();
+      } );
     </script>
   </body>
 </html>

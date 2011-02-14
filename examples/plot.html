@@ -17,9 +17,9 @@
         var i, j = [],y;
         for( i = min; i <= max; i += step ) {
           y = f(i);
-          if( y > -50.0 && y < 50.0 ) { 
+          //if( y > -50.0 && y < 50.0 ) { 
             j.push([i,y]);
-          }
+          //}
         }
         return j; 
       }
@@ -41,16 +41,15 @@
           } },
         { name : 'Lennard-Jones', func : function() { 
             $.plot( $('#plot'), [ { data: tab( lj1, 0.75, 5, 0.01 ), color : 'rgb(200,0,0)', label : 'Lennard-Jones tabulated' },
-                                  { data: tab( lj2, 0.75, 5, 0.01 ), color : 'rgb(0,200,0)', label : 'Lennard-Jones' } ] );
+                                  { data: tab( lj2, 0.75, 5, 0.01 ), color : 'rgb(0,200,0)', label : 'Lennard-Jones' },
+                                  { data: tab( zblf, 0.25, 5, 0.01 ), color : 'rgb(0,0,200)', label : 'ZBL' } ] );
           } },
-        { name : 'Morse', func : function() { 
-            $.plot( $('#plot'), [ { data: tab( force2, 0.5, 5.0, 0.02 ), color : 'rgb(200,0,0)', label : 'Morse' } ] );
+        { name : 'Morse and ZBL', func : function() { 
+            $.plot( $('#plot'), [ { data: tab( force2, 0.1, 5.0, 0.02 ), color : 'rgb(200,0,0)', label : 'Morse' },
+                                  { data: tab( zblf, 0.1, 5, 0.01 ), color : 'rgb(0,200,0)', label : 'ZBL' } ] );
           } },
         { name : 'ZBL energy', func : function() { 
             $.plot( $('#plot'), [ { data: tab( zble, 1, 5, 0.01 ), color : 'rgb(200,0,0)', label : 'energy' } ] );
-          } },
-        { name : 'ZBL force', func : function() { 
-            $.plot( $('#plot'), [ { data: tab( zblf, 1, 5, 0.01 ), color : 'rgb(0,200,0)', label : 'force' } ] );
           } } ];
       $(plots).each( function(i,e) { $(plotselect).append('<option value='+i+'>'+e.name+'</option>'); } );
       $('#plotselect').change( function() {

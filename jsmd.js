@@ -121,8 +121,11 @@ var jsmd = (function(){
 
     // colinear vector
     this.c = new Vector( x2-x1, y2-y1 );
-    this.l = this.c.pbclen(); // length
+    this.l = this.c.len(); // length
     this.c.scale(1.0/this.l);
+
+    // store force acting on the barrier
+    this.f = new Vector( 0.0, 0.0 );
 
     // default interation type
     this.t = 0;
@@ -182,6 +185,9 @@ var jsmd = (function(){
     this.dt = 0.0;   // set by dynamic timestepper
     this.step = 0;   // number of current MD step
     this.time = 0.0; // expired simulation time
+
+    // drag factor (set to 1 to disable drag)
+    this.drag = 0.995;
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -306,6 +312,10 @@ var jsmd = (function(){
       this.atoms[i].f.x = 0.0;
       this.atoms[i].f.y = 0.0;
     }
+    for( i = 0; i < this.barriers.length; ++i ) {
+      this.barriers[i].f.x = 0.0;
+      this.barriers[i].f.y = 0.0;
+    }
 
     // build up forces (newtonian)
     for( i = 0; i < this.atoms.length; ++i ) {
@@ -334,14 +344,15 @@ var jsmd = (function(){
       for( j = 0; j < this.barriers.length; ++j ) {
         // find distance to barrier
         rvec = this.barriers[j].dist(this.atoms[i].p);
-        dr = rvec.pbclen();
+        dr = rvec.pbclen(this.w,this.h);
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.barriers[j].t];
           if( f !== undefined ) {
             F = f.call( this, dr, [ this.atoms[i].t, this.barriers[j].t ] );
-            //$('#mdlog').text(dr+','+f);
+            console.log(dr+','+f);
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
+            this.barriers[j].f.sub(rvec);
           }
         }
       }
@@ -374,7 +385,7 @@ var jsmd = (function(){
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
 
       // linear drag term
-      this.atoms[i].v.scale(0.995);
+      this.atoms[i].v.scale(this.drag);
 
       // maximum velocity and acceleration
       vmax = Math.max( vmax, this.atoms[i].v.len2() );
@@ -408,7 +419,7 @@ var jsmd = (function(){
 
     // clear
     c.fillStyle = "rgb(200,200,200)";
-    c.fillRect(0, 0, 800, 500);
+    c.fillRect(0, 0, 800, 500); //TODO: wrong!
 
     // process render chain
     for( i = 0; i < this.renderChain.length; ++i ) {
@@ -502,6 +513,13 @@ var jsmd = (function(){
     }
   }
 
+  // hard wall
+  function force12() {
+    return function(r) {
+      return -Math.pow(r,-13.0);
+    }
+  }
+
   // Morse potential for pair equilibrium distance re, potential softness 1/a, and well depth De
   function forceMorse( re_, a_, De_ ) {
     //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
@@ -512,6 +530,19 @@ var jsmd = (function(){
     return function(r) {
       var ex = Math.exp( -a*(r-re) );
       return 2.0 * a * De * (1-ex) * ex;
+    }
+  }
+
+  // Morse potential energy
+  function energyMorse( re_, a_, De_ ) {
+    //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
+    var re = re_ !== undefined ? re_ : 1.5,
+        a  = a_  !== undefined ? a_  : 2.0,
+        De = De_ !== undefined ? De_ : 1.0;
+
+    return function(r) {
+      var ex = Math.exp( -a*(r-re) );
+      return De * (1-ex) * (1-ex);
     }
   }
 
@@ -592,11 +623,13 @@ var jsmd = (function(){
     },
     force : {
       lennardJones : forceLJ,
+      wall : force12,
       morse : forceMorse,
       tabulated : forceTabulated,
       diff : forceNumericalDiff
     },
     energy : {
+      morse : energyMorse,
       ZBL : energyZBL
     }
   };

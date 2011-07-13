@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>jsMD example</title>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../jsmd.js"></script>
+  <body>
+    <canvas id="simcan" width="625" height="500"></canvas>
+    <button onclick="heat()">Heat</button>
+    <div id="log"></div>
+    <script type="text/javascript">
+
+      var ss = 40,
+          sim = new jsmd.Simulation(ss,ss*0.8),
+          t, c = 0, a, ax, ay, x, y, i;
+      sim.setCanvas(document.getElementById('simcan'));
+
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      sim.types.push(t);
+      t = new jsmd.AtomType();
+      t.r = 0.25;
+      t.m = 1;
+      t.color = 'rgb(0,200,0)';
+      sim.types.push(t);
+
+      for( y = 0; y < ss; ++y ) {
+        for( x = 0; x < ss; x+=1 ) {
+          ax = (x+c/2);
+          ay = y * 0.8;
+          if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 36 ) {
+            a = new jsmd.Atom(ax,ay);
+            a.p.wrap(ss,ss*0.8);
+            sim.atoms.push(a);
+          }   
+        }
+        c = 1.0-c;
+      }
+
+      sim.setCutOff(4.0,0.5);
+
+      // tabulate the morse potential with all default options
+      var force = jsmd.force.tabulated( jsmd.force.morse(1.2) );
+
+      sim.setInteraction( [0,0], force );
+      sim.setInteraction( [1,0], force );
+      sim.setInteraction( [1,1], force );
+      sim.updateNeighborlist();
+
+      //sim.renderChain = [ jsmd.render.atoms, renderPKA ]; // , renderEnergies
+      //sim.renderChain = [ jsmd.render.atoms, renderNl ];
+
+      //sim.dt = 0.1;
+      var count = 0;
+      sim.pkapos = [];
+      setInterval( function() {
+        sim.velocityVerlet();
+        sim.velocityVerlet();
+        sim.draw();
+      }, 1000/50 );
+
+      function heat() {
+        sim.drag = 1.0;
+        for( i = 0; i < sim.atoms.length; i++ ) {
+          a = sim.atoms[i];
+          a.v.x += 1*(Math.random()-0.5);
+          a.v.x += 1*(Math.random()-0.5);
+        }
+      }
+
+    </script>
+  </body>
+</html>

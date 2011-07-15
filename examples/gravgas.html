@@ -30,6 +30,8 @@
           ay = y * 0.8;
           if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 36 ) {
             a = new jsmd.Atom(ax,ay);
+            a.v.x += 20*(Math.random()-0.5);
+            a.v.y += 20*(Math.random()-0.5);
             a.p.wrap(ss,ss*0.8);
             sim.atoms.push(a);
           }   

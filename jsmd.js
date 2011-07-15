@@ -188,6 +188,9 @@ var jsmd = (function(){
 
     // drag factor (set to 1 to disable drag)
     this.drag = 0.995;
+    
+    // gravitation/wind
+    this.f = new Vector(0,0);
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -309,8 +312,7 @@ var jsmd = (function(){
 
     // zero forces set timestep
     for( i = 0; i < this.atoms.length; ++i ) {
-      this.atoms[i].f.x = 0.0;
-      this.atoms[i].f.y = 0.0;
+      this.atoms[i].f.set(this.f);
     }
     for( i = 0; i < this.barriers.length; ++i ) {
       this.barriers[i].f.x = 0.0;
@@ -397,7 +399,7 @@ var jsmd = (function(){
     this.time += dt;
 
     // compute timestep
-    dmax = 0.025;
+    dmax = 0.025
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
     this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );

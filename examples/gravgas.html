@@ -23,12 +23,12 @@
       t.m = 0.5;
       t.color = 'rgb(0,200,0)';
       sim.types.push(t);
-
+/*
       for( y = 0; y < ss; ++y ) {
         for( x = 0; x < ss; x+=1 ) {
           ax = (x+c/2);
           ay = y * 0.8;
-          if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 24 ) {
+          if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 9 ) {
             a = new jsmd.Atom(ax,ay);
             a.v.x += 250*(Math.random()-0.5);
             a.v.y += 250*(Math.random()-0.5);
@@ -39,6 +39,14 @@
         }
         c = 1.0-c;
       }
+*/
+      a = new jsmd.Atom(ss/2,ss*0.4);
+      a.v.x += 250*(Math.random()-0.5);
+      a.v.y += 250*(Math.random()-0.5);
+      a.p.wrap(ss,ss*0.8);
+      a.t = y & 1;
+      sim.atoms.push(a);
+
       sim.barriers.push( new jsmd.Barrier(0,0.8*ss,ss,0.8*ss) );
       sim.drag = 1.0;
 
@@ -55,9 +63,20 @@
       // gravitation
       sim.f.y = 0.5;
 
+      function renderBVec(c) {
+        var rvec = this.barriers[0].dist(this.atoms[0].p);
+        var dr = rvec.pbclen(this.w,this.h);
+        if( dr < this.rc ) {
+          c.lineWidth = 0.05;
+          c.beginPath();
+          c.moveTo( this.atoms[0].p.x, this.atoms[0].p.y );
+          c.lineTo( this.atoms[0].p.x+rvec.x, this.atoms[0].p.y+rvec.y );
+          c.stroke();
+        }
+      }
       //sim.renderChain = [ jsmd.render.atoms, renderPKA ]; // , renderEnergies
       //sim.renderChain = [ jsmd.render.atoms, renderNl ];
-      sim.renderChain = [ jsmd.render.atoms ];
+      sim.renderChain = [ jsmd.render.atoms, renderBVec ];
 
       //sim.dt = 0.1;
       var count = 0;

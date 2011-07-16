@@ -477,7 +477,6 @@ var jsmd = (function(){
       c.beginPath();
       c.moveTo( this.barriers[i].p[0].x, this.barriers[i].p[0].y );
       c.lineTo( this.barriers[i].p[1].x, this.barriers[i].p[1].y );
-      c.closePath();
       c.stroke();
     }
   }

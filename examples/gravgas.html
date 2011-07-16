@@ -19,8 +19,8 @@
       t.r = 0.25;
       sim.types.push(t);
       t = new jsmd.AtomType();
-      t.r = 0.25;
-      t.m = 1;
+      t.r = 0.15;
+      t.m = 0.5;
       t.color = 'rgb(0,200,0)';
       sim.types.push(t);
 
@@ -28,17 +28,19 @@
         for( x = 0; x < ss; x+=1 ) {
           ax = (x+c/2);
           ay = y * 0.8;
-          if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 36 ) {
+          if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 24 ) {
             a = new jsmd.Atom(ax,ay);
-            a.v.x += 20*(Math.random()-0.5);
-            a.v.y += 20*(Math.random()-0.5);
+            a.v.x += 250*(Math.random()-0.5);
+            a.v.y += 250*(Math.random()-0.5);
             a.p.wrap(ss,ss*0.8);
+            a.t = y & 1;
             sim.atoms.push(a);
           }   
         }
         c = 1.0-c;
       }
       sim.barriers.push( new jsmd.Barrier(0,0.8*ss,ss,0.8*ss) );
+      sim.drag = 1.0;
 
       sim.setCutOff(4.0,0.5);
 
@@ -55,6 +57,7 @@
 
       //sim.renderChain = [ jsmd.render.atoms, renderPKA ]; // , renderEnergies
       //sim.renderChain = [ jsmd.render.atoms, renderNl ];
+      sim.renderChain = [ jsmd.render.atoms ];
 
       //sim.dt = 0.1;
       var count = 0;
@@ -66,7 +69,6 @@
       }, 1000/50 );
 
       function heat() {
-        sim.drag = 1.0;
         for( i = 0; i < sim.atoms.length; i++ ) {
           a = sim.atoms[i];
           a.v.x += 1*(Math.random()-0.5);

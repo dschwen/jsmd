@@ -6,13 +6,19 @@
     <script type="text/javascript" src="../jsmd.js"></script>
   <body>
     <canvas id="simcan" width="625" height="500"></canvas>
-    <button onclick="heat()">Heat</button>
+    <div>
+      <button onclick="heat()">Heat</button>
+      <div>T:<span id="showT"></span></div>
+      <div>P:<span id="showP"></span></div>
+    </div>
     <div id="log"></div>
     <script type="text/javascript">
 
       var ss = 40,
           sim = new jsmd.Simulation(ss,ss*0.8),
-          t, c = 0, a, ax, ay, x, y, i;
+          t, c = 0, a, ax, ay, x, y, i,
+          showT = document.getElementById('showT'),
+          showP = document.getElementById('showP');
       sim.setCanvas(document.getElementById('simcan'));
 
       t = new jsmd.AtomType();
@@ -57,6 +63,8 @@
         sim.velocityVerlet();
         sim.velocityVerlet();
         sim.draw();
+        showP.innerHTML = sim.P;
+        showT.innerHTML = sim.T;
       }, 1000/50 );
 
       function heat() {

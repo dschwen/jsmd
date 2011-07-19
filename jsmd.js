@@ -112,7 +112,7 @@ var jsmd = (function(){
   }
 
   // Barrier constructor
-  function Barrier(x1,y1,x2,y2) {
+  function Barrier(x1,y1,x2,y2,sim) {
     this.p = [ new Vector(x1,y1),  new Vector(x2,y2) ];
 
     // normal vector
@@ -129,10 +129,15 @@ var jsmd = (function(){
 
     // default interation type
     this.t = 0;
+    
+    // link back to ssimulation object for PBC
+    this.sim = sim;
   }
   Barrier.prototype.dist = function(a) {
-    var sv = new Vector( this.p[0].x - a.x, this.p[0].y - a.y ),
-        s = -(sv.x*this.c.x + sv.y*this.c.y);
+    var sv = new Vector( this.p[0].x - a.x, this.p[0].y - a.y ), s;
+
+    sv.dwrap( this.sim.w, this.sim.h );
+    s = -(sv.x*this.c.x + sv.y*this.c.y);
 
     if( s <= 0 ) { // return vector to endpoint 0
       return sv;
@@ -191,6 +196,13 @@ var jsmd = (function(){
     
     // gravitation/wind
     this.f = new Vector(0,0);
+    
+    // store the virial here (for pressure calculation)
+    this.vir = 0.0;
+    // instantaneous temperature 
+    this.T = 0.0;
+    // instantaneous pressure
+    this.P = 0.0;
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -318,6 +330,9 @@ var jsmd = (function(){
       this.barriers[i].f.x = 0.0;
       this.barriers[i].f.y = 0.0;
     }
+    
+    // clear virial
+    this.vir = 0.0;
 
     // build up forces (newtonian)
     for( i = 0; i < this.atoms.length; ++i ) {
@@ -336,6 +351,8 @@ var jsmd = (function(){
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
             this.atoms[j].f.sub(rvec);
+            
+            this.vir += F*dr;
           }
         }
       }
@@ -355,14 +372,19 @@ var jsmd = (function(){
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
             this.barriers[j].f.sub(rvec);
+            
+            this.vir += F*dr;
           }
         }
       }
     }
+    
+    // virial (1/3.0 in 3d, 1/2.0 in 2d)
+    this.vir /= 2.0;
   }
   Simulation.prototype.velocityVerlet = function() {
     var i,
-        dt = this.dt, m,
+        dt = this.dt, m, v2,
         dmax, rmax = 0.0, vmax = 0.0, amax = 0.0,
         dp = new jsmd.Vector();
 
@@ -383,16 +405,28 @@ var jsmd = (function(){
     this.updateForces();
 
     // second velocity verlet step
+    this.T = 0.0;
     for( i = 0; i < this.atoms.length; ++i ) {
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
 
       // linear drag term
       this.atoms[i].v.scale(this.drag);
 
+      // calculate temperature
+      v2 = this.atoms[i].v.len2();
+      this.T += this.types[this.atoms[i].t].m * v2;
+      
       // maximum velocity and acceleration
-      vmax = Math.max( vmax, this.atoms[i].v.len2() );
+      vmax = Math.max( vmax, v2 );
       amax = Math.max( amax, this.atoms[i].f.len2()/(0.25*m*m) );
     }
+    this.T /= 2.0;
+    
+    // calculate pressure (PV=NkBT-this.vir)
+    this.P = ( this.T -this.vir ) / ( this.w * this.h );
+    
+    // 3/2*N*kB*T = 1/2*sum(m*v^2) (2/2NkT in 2d?)
+    this.T = this.T/(this.atoms.length); // *1/kB
 
     // increase step counters
     this.step++;

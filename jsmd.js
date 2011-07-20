@@ -1,21 +1,26 @@
 var jsmd = (function(){
-  // Vector constructor
-  function Vector(x,y) {
-    this.x = x || 0.0;
-    this.y = y || 0.0;
+  // Vector constructor 
+  function Vector2d(x,y) { // or Vector2d(v), where v is a Vector, or Vector2d(), which initializes to zero
+    if( y === undefined && x !== undefined ) {
+      this.x = x.x;
+      this.y = x.y;
+    } else {
+      this.x = x || 0.0;
+      this.y = y || 0.0;
+    }
   }
-  Vector.prototype.len = function() {
+  Vector2d.prototype.len = function() {
     return Math.sqrt( this.x * this.x + this.y * this.y );
   }
-  Vector.prototype.len2 = function() {
+  Vector2d.prototype.len2 = function() {
     return this.x * this.x + this.y * this.y;
   }
-  Vector.prototype.pbclen = function(w,h) {
-    var dx = this.x - Math.round(this.x/w) * w,
-        dy = this.y - Math.round(this.y/h) * h;
+  Vector2d.prototype.pbclen = function(ss) {
+    var dx = this.x - Math.round(this.x/ss.x) * ss.x,
+        dy = this.y - Math.round(this.y/ss.y) * ss.y;
     return Math.sqrt( dx*dx + dy*dy );
   }
-  Vector.prototype.normalize = function() {
+  Vector2d.prototype.normalize = function() {
     var len = this.len();
     if( len === 0 ) {
       this.x = 1; this.y = 0;
@@ -23,83 +28,88 @@ var jsmd = (function(){
       this.x /= len; this.y /= len;
     }
   }
-  Vector.distance = function(a,b) {
+  Vector2d.prototype.vol = function() {
+    return this.x * this.y;
+  }
+  Vector2d.distance = function(a,b) {
     return Math.sqrt( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) );
   }
-  Vector.distance2 = function(a,b) {
+  Vector2d.distance2 = function(a,b) {
     return (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
   }
-  Vector.pbcdistance = function(a,b,w,h) {
+  Vector2d.pbcdistance = function(a,b,ss) {
     var dx = a.x-b.x,
         dy = a.y-b.y;
-    dx -= Math.round(dx/w) * w;
-    dy -= Math.round(dy/h) * h;
+    dx -= Math.round(dx/ss.x) * ss.x;
+    dy -= Math.round(dy/ss.y) * ss.y;
     return Math.sqrt( dx*dx + dy*dy );
   }
-  Vector.pbcdistance2 = function(a,b,w,h) {
+  Vector2d.pbcdistance2 = function(a,b,ss) {
     var dx = a.x-b.x,
         dy = a.y-b.y;
-    dx -= Math.round(dx/w) * w;
-    dy -= Math.round(dy/h) * h;
+    dx -= Math.round(dx/ss.x) * ss.x;
+    dy -= Math.round(dy/ss.y) * ss.y;
     return dx*dx + dy*dy;
   }
-  Vector.prototype.wrap = function(w,h) {
-    this.x -= Math.floor(this.x/w) * w;
-    this.y -= Math.floor(this.y/h) * h;
+  Vector2d.prototype.wrap = function(ss) {
+    this.x -= Math.floor(this.x/ss.x) * ss.x;
+    this.y -= Math.floor(this.y/ss.y) * ss.y;
   }
-  Vector.prototype.dwrap = function(w,h) {
-    this.x -= Math.round(this.x/w) * w;
-    this.y -= Math.round(this.y/h) * h;
+  Vector2d.prototype.dwrap = function(ss) {
+    this.x -= Math.round(this.x/ss.x) * ss.x;
+    this.y -= Math.round(this.y/ss.y) * ss.y;
   }
-  Vector.sub = function(a,b) {
-    return new Vector( a.x-b.x, a.y-b.y );
+  Vector2d.sub = function(a,b) {
+    return new Vector2d( a.x-b.x, a.y-b.y );
   }
-  Vector.prototype.sub = function(a) {
+  Vector2d.prototype.sub = function(a) {
     this.x -= a.x;
     this.y -= a.y;
   }
-  Vector.add = function(a,b) {
-    return new Vector( a.x+b.x, a.y+b.y );
+  Vector2d.add = function(a,b) {
+    return new Vector2d( a.x+b.x, a.y+b.y );
   }
-  Vector.prototype.add = function(a) {
+  Vector2d.prototype.add = function(a) {
     this.x += a.x;
     this.y += a.y;
   }
-  Vector.scale = function(a,b) {
-    return new Vector( a.x*b, a.y*b );
+  Vector2d.scale = function(a,b) {
+    return new Vector2d( a.x*b, a.y*b );
   }
-  Vector.prototype.scale = function(a) {
+  Vector2d.prototype.scale = function(a) {
     this.x *= a;
     this.y *= a;
   }
-  Vector.smul = function(a,b) { // scalar product
+  Vector2d.smul = function(a,b) { // scalar product
     return a.x*b.x + a.y*b.y;
   }
-  Vector.prototype.smul = function(a) { // scalar product
+  Vector2d.prototype.smul = function(a) { // scalar product
     return this.x*a.x + this.y*a.y;
   }
-  Vector.prototype.proj = function(a) { // assume a is a unit vector!
+  Vector2d.prototype.proj = function(a) { // assume a is a unit vector!
     var s = this.smul(a);
     this.x = a.x * s;
     this.y = a.y * s;
   }
-  Vector.prototype.zero = function() {
+  Vector2d.prototype.zero = function() {
     this.x = 0.0;
     this.y = 0.0;
   }
-  Vector.prototype.set = function(a) {
+  Vector2d.prototype.set = function(a) {
     this.x = a.x;
     this.y = a.y;
   }
-  Vector.random = function(w,h) {
-    return new Vector( Math.random()*w, Math.random()*h );
+  Vector2d.random = function(ss) {
+    return new Vector2d( Math.random()*ss.x, Math.random()*ss.y );
   }
+
+  var Vector = Vector2d;
 
   // Atom constructor
   function Atom(x,y) {
-    this.p = new Vector(x,y);
-    this.v = new Vector(0,0);
-    this.f = new Vector(0,0);
+    this.p = new Vector(x,y); // y may be 'undefined' if x is a vector!
+    this.v = new Vector();
+    this.f = new Vector();
     this.t = 0;
   }
 
@@ -111,16 +121,16 @@ var jsmd = (function(){
     this.m = 1.0;
   }
 
-  // Barrier constructor
-  function Barrier(x1,y1,x2,y2,sim) {
-    this.p = [ new Vector(x1,y1),  new Vector(x2,y2) ];
+  // Barrier constructor strictly 2d right now
+  function Barrier(p1,p2,sim) {
+    this.p = [ new Vector(p1),  new Vector(p2) ];
 
     // normal vector
-    this.n = new Vector( y2-y1, x1-x2 );
+    this.n = Vector.sub(p2,p1);
     this.n.normalize();
 
     // colinear vector
-    this.c = new Vector( x2-x1, y2-y1 );
+    this.c = new Vector( p2.x-p1.x, p2.y-p1.y );
     this.l = this.c.len(); // length
     this.c.scale(1.0/this.l);
 
@@ -136,7 +146,7 @@ var jsmd = (function(){
   Barrier.prototype.dist = function(a) {
     var sv = new Vector( this.p[0].x - a.x, this.p[0].y - a.y ), s;
 
-    sv.dwrap( this.sim.w, this.sim.h );
+    sv.dwrap( this.sim.ss );
     s = -(sv.x*this.c.x + sv.y*this.c.y);
 
     if( s <= 0 ) { // return vector to endpoint 0
@@ -162,7 +172,7 @@ var jsmd = (function(){
   }
 
   // Simulation constructor (this contains all the important logic)
-  function Simulation(w,h, options) {
+  function Simulation(ss, options) {
     this.atoms    = []; // list of atoms
     this.barriers = []; // list of barriers
     this.types    = []; // list of atom types
@@ -171,8 +181,8 @@ var jsmd = (function(){
     this.interaction = [];
 
     // box dimensions
-    this.w = w;
-    this.h = h;
+    this.ss = new Vector();
+    this.ss.set(ss);
 
     // canvas for visualization
     this.canvas = {};
@@ -226,10 +236,10 @@ var jsmd = (function(){
     this.rc2 = rc*rc;
 
     // number and size of cells (have at least 3 cells in each direction)
-    this.lc.nx = Math.max( 3, Math.floor(this.w/rm) );
-    this.lc.ny = Math.max( 3, Math.floor(this.h/rm) );
-    this.lc.dx = this.w/this.lc.nx;
-    this.lc.dy = this.h/this.lc.ny;
+    this.lc.nx = Math.max( 3, Math.floor(this.ss.x/rm) );
+    this.lc.ny = Math.max( 3, Math.floor(this.ss.y/rm) );
+    this.lc.dx = this.ss.x/this.lc.nx;
+    this.lc.dy = this.ss.y/this.lc.ny;
 
     // build the 2D linkcell grid
     l = new Array(this.lc.nx);
@@ -294,7 +304,7 @@ var jsmd = (function(){
           ka = this.lc.data[i][j][k];
           for( l = k+1; l < ll; ++l ) {
             la = this.lc.data[i][j][l];
-            if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.w, this.h ) < this.rm2 ) {
+            if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.ss ) < this.rm2 ) {
               this.nl.data[ka].push(la);
             }
           }
@@ -306,7 +316,7 @@ var jsmd = (function(){
             // loop over all atoms in that neighbor cells
             for( l = 0; l < this.lc.data[i2][j2].length; ++l ) {
               la = this.lc.data[i2][j2][l];
-              if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.w, this.h ) < this.rm2 ) {
+              if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.ss ) < this.rm2 ) {
                 this.nl.data[ka].push(la);
               }
             }
@@ -345,7 +355,7 @@ var jsmd = (function(){
         j = this.nl.data[i][k];
 
         rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
-        rvec.dwrap( this.w, this.h );
+        rvec.dwrap(this.ss);
         dr = rvec.len2();
         if( dr < this.rc2 ) {
           dr = Math.sqrt(dr);
@@ -367,7 +377,7 @@ var jsmd = (function(){
       for( j = 0; j < this.barriers.length; ++j ) {
         // find distance to barrier
         rvec = this.barriers[j].dist(this.atoms[i].p);
-        dr = rvec.pbclen(this.w,this.h);
+        dr = rvec.pbclen(this.ss);
         if( dr < this.rc ) {
           f = this.interaction[this.atoms[i].t][this.barriers[j].t];
           if( f !== undefined ) {
@@ -398,7 +408,7 @@ var jsmd = (function(){
       dp.set( this.atoms[i].v ); dp.scale(this.dt); // dp = v*dt
       dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt*this.dt) );
       this.atoms[i].p.add(dp);
-      this.atoms[i].p.wrap( this.w, this.h );
+      this.atoms[i].p.wrap(this.ss);
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt) );
 
       // track maximum displacement
@@ -428,10 +438,10 @@ var jsmd = (function(){
       vmax = Math.max( vmax, v2 );
       amax = Math.max( amax, this.atoms[i].f.len2()/(0.25*m*m) );
     }
-    this.T /= 2.0;
+    this.T /= 2.0; // Vector.dim
     
     // calculate pressure (PV=NkBT-this.vir)
-    this.P = ( this.T -this.vir ) / ( this.w * this.h );
+    this.P = ( this.T -this.vir ) / ( this.ss.vol() );
     
     // 3/2*N*kB*T = 1/2*sum(m*v^2) (2/2NkT in 2d?)
     this.T = this.T/(this.atoms.length); // *1/kB
@@ -477,7 +487,7 @@ var jsmd = (function(){
         i;
 
     // setup transform
-    c.setTransform( this.canvas.w/this.w, 0,0, this.canvas.h/this.h, 0,0 );
+    c.setTransform( this.canvas.w/this.ss.x, 0,0, this.canvas.h/this.ss.y, 0,0 );
 
     // clear
     c.fillStyle = "rgb(200,200,200)";
@@ -517,13 +527,13 @@ var jsmd = (function(){
       drawAtom(x,y,r);
 
       // draw wrap-around copies
-      if( x <= r || y <= r || x+r > this.w || y+r > this.h ) {
-        if( x <= r ) drawAtom(x+this.w,y,r);
-        if( y <= r ) drawAtom(x,y+this.h,r);
-        if( x <= r &&  y <= r ) drawAtom(x+this.w,y+this.h,r);
-        if( x+r > this.w ) drawAtom(x-this.w,y,r);
-        if( y+r > this.h ) drawAtom(x,y-this.h,r);
-        if( x+r > this.w && y+r > this.h) drawAtom(x-this.w,y-this.h,r);
+      if( x <= r || y <= r || x+r > this.ss.x || y+r > this.ss.y ) {
+        if( x <= r ) drawAtom(x+this.ss.x,y,r);
+        if( y <= r ) drawAtom(x,y+this.ss.y,r);
+        if( x <= r &&  y <= r ) drawAtom(x+this.ss.x,y+this.ss.y,r);
+        if( x+r > this.ss.x ) drawAtom(x-this.ss.x,y,r);
+        if( y+r > this.ss.y ) drawAtom(x,y-this.ss.y,r);
+        if( x+r > this.ss.x && y+r > this.ss.y) drawAtom(x-this.ss.x,y-this.ss.y,r);
       }
     }
   }

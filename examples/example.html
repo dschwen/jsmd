@@ -98,7 +98,9 @@
       }
 
 
-      var sim = new jsmd.Simulation(20,20*0.8);
+      var sv = new  jsmd.Vector(20,20*0.8),
+          sim = new jsmd.Simulation(sv);
+
       sim.setCanvas(document.getElementById('simcan'));
 
       var t;
@@ -111,17 +113,19 @@
       t.color = 'rgb(0,200,0)';
       sim.types.push(t);
 
-      var c = 0, a, pka;
+      var c = 0, a, pka, p = new jsmd.Vector();
       for( var y = 0; y < 20; ++y ) {
         for( var x = 0; x < 20; x+=1 ) {
-          a = new jsmd.Atom((x+c/2),y*0.8);
+          p.x = (x+c/2);
+          p.y = y*0.8;
+          a = new jsmd.Atom(p);
           if( x == 10 && y == 10 ) {
             a.v.x = 40;
             a.v.y = 8;
             a.t = 1;
             pka = a;
           }   
-          a.p.wrap(20,20*0.8);
+          a.p.wrap(sv);
           sim.atoms.push(a);
         }
         c = 1.0-c;

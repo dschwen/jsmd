@@ -15,9 +15,9 @@
     <pre id="log"></pre>
     <script type="text/javascript">
 
-      var ss = 40,
-          sim = new jsmd.Simulation(ss,ss*0.8),
-          t, c = 0, a, ax, ay, x, y, i,
+      var ss = 40, sv = new jsmd.Vector(ss,ss*0.8),
+          sim = new jsmd.Simulation(sv),
+          t, c = 0, a, p = new jsmd.Vector, x, y, i,
           T = 0.0, P = 0.0, Q = 0.0,
           count = 0, rcount = 0, rup = false,
           logp = document.getElementById('log'),
@@ -36,11 +36,11 @@
 
       for( y = 0; y < ss; ++y ) {
         for( x = 0; x < ss; x+=1 ) {
-          ax = (x+c/2);
-          ay = y * 0.8;
-          if( (ax-ss/2)*(ax-ss/2)+(ay-ss/2*0.8)*(ay-ss/2*0.8) <= 36 ) {
-            a = new jsmd.Atom(ax,ay);
-            a.p.wrap(ss,ss*0.8);
+          p.x = (x+c/2);
+          p.y = y * 0.8;
+          if( (p.x-ss/2)*(p.x-ss/2)+(p.y-ss/2*0.8)*(p.y-ss/2*0.8) <= 36 ) {
+            a = new jsmd.Atom(p);
+            a.p.wrap(sv);
             sim.atoms.push(a);
           }   
         }

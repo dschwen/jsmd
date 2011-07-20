@@ -71,8 +71,10 @@
         c.stroke();
       }
 
-      var ss = 20;
-      var sim = new jsmd.Simulation(ss,ss*0.8);
+      var ss = 20,
+          sv = new jsmd.Vector(ss,ss*0.8),
+          sim = new jsmd.Simulation(sv);
+
       sim.setCanvas(document.getElementById('simcan'));
 
       // add atom types
@@ -90,7 +92,7 @@
       var c = 0, a, pka;
       for( var y = 0; y < ss; ++y ) {
         for( var x = 0; x < ss; x+=1 ) {
-          a = new jsmd.Atom((x+c/2),y*0.8);
+          a = new jsmd.Atom(); // put atoms at 0,0. position will be initialized in reset()
           if( x == 5 && y == 8 ) {
             pka = a;
           }
@@ -133,7 +135,7 @@
             sim.atoms[i].p.y = y * 0.8;
             sim.atoms[i].v.zero();
             sim.atoms[i].f.zero();
-            sim.atoms[i].p.wrap(ss,ss*0.8);
+            sim.atoms[i].p.wrap(sv);
             i++;
           }
           c = 1.0-c;

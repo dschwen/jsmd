@@ -48,7 +48,8 @@
         c.stroke();
       }
 
-      var sim = new jsmd.Simulation(15,15*0.8);
+      var sv = new jsmd.Vector(15,15*0.8);
+          sim = new jsmd.Simulation(sv);
       sim.setCanvas(document.getElementById('simcan'));
 
       var t;
@@ -72,7 +73,7 @@
             pka = a;
             pka_num = sim.atoms.length;
           }   
-          a.p.wrap(20,20*0.8);
+          a.p.wrap(sv);
           sim.atoms.push(a);
         }
         c = 1.0-c;

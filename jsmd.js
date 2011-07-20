@@ -456,6 +456,21 @@ var jsmd = (function(){
     amax = Math.sqrt(amax);
     this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
   }
+
+  // Berendsen hydrostatic barostat factory function
+  function computeBerendsenP( P0, tau ) {
+    return function(store) {
+      var i, l = ( 1.0 - this.dt/tau * ( P0 - this.P ) );
+
+      // scale atomic coordinates
+      for( i = 0; i < this.atoms.length; ++i ) {
+        this.atoms[i].p.scale(l);
+      }
+      
+      // scale box
+      this.ss.scale(l);
+    }
+  }
   
   // run one full timestep, process all items in the compute chain
   Simulation.prototype.run = function(steps) {
@@ -491,7 +506,7 @@ var jsmd = (function(){
 
     // clear
     c.fillStyle = "rgb(200,200,200)";
-    c.fillRect(0, 0, 800, 500); //TODO: wrong!
+    c.fillRect(0, 0, this.ss.x,this.ss.y );
 
     // process render chain
     for( i = 0; i < this.renderChain.length; ++i ) {
@@ -690,7 +705,8 @@ var jsmd = (function(){
     compute : {
       forces : computeForces,
       verlet1 : computeVerlet1,
-      verlet2 : computeVerlet2
+      verlet2 : computeVerlet2,
+      berendsenP: computeBerendsenP
     },
     render : {
       atoms : renderAtoms,

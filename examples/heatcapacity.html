@@ -60,6 +60,14 @@
       //sim.renderChain = [ jsmd.render.atoms, renderNl ];
       sim.renderChain = [ jsmd.render.atoms ];
 
+      // add barostat
+      sim.computeChain = [ 
+        jsmd.compute.verlet1,
+        jsmd.compute.forces,
+        jsmd.compute.verlet2,
+        jsmd.compute.berendsenP( 0, 10.0 ) 
+      ];
+
       //sim.dt = 0.1;
       sim.pkapos = [];
       setInterval( function() {

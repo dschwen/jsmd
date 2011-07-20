@@ -180,6 +180,9 @@ var jsmd = (function(){
     // setup default render chain
     this.renderChain = [ renderAtoms, renderForces, renderBarriers ];
 
+    // setup default compute chain
+    this.computeChain = [ computeVerlet1, computeForces, computeVerlet2 ];
+    
     // linkcell data
     this.lc = {};
 
@@ -316,7 +319,8 @@ var jsmd = (function(){
     // increase update counter
     this.nl.count++;
   }
-  Simulation.prototype.updateForces = function() {
+  
+  function computeForces(store) {
     var i,j,k,  // integer
         F,dr, // float
         f, // function
@@ -382,32 +386,36 @@ var jsmd = (function(){
     // virial (1/3.0 in 3d, 1/2.0 in 2d)
     this.vir /= 2.0;
   }
-  Simulation.prototype.velocityVerlet = function() {
-    var i,
-        dt = this.dt, m, v2,
-        dmax, rmax = 0.0, vmax = 0.0, amax = 0.0,
+  
+  // first velocity verlet step
+  function computeVerlet1(store) {
+    var i, m, v2, rmax = 0.0,
         dp = new jsmd.Vector();
 
     // first velocity verlet step
     for( i = 0; i < this.atoms.length; ++i ) {
       m = this.types[this.atoms[i].t].m;
-      dp.set( this.atoms[i].v ); dp.scale(dt); // dp = v*dt
-      dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt*dt) );
+      dp.set( this.atoms[i].v ); dp.scale(this.dt); // dp = v*dt
+      dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt*this.dt) );
       this.atoms[i].p.add(dp);
       this.atoms[i].p.wrap( this.w, this.h );
-      this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+      this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt) );
 
       // track maximum displacement
       rmax = Math.max( rmax, dp.len2() );
     }
 
     this.updateNeighborlist(Math.sqrt(rmax));
-    this.updateForces();
+  }
 
-    // second velocity verlet step
+  // second velocity verlet step
+  function computeVerlet2(store) {
+    var i, m, v2, vmax = 0.0, amax = 0.0, dmax;
+    
     this.T = 0.0;
     for( i = 0; i < this.atoms.length; ++i ) {
-      this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*dt) );
+      m = this.types[this.atoms[i].t].m;
+      this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt) );
 
       // linear drag term
       this.atoms[i].v.scale(this.drag);
@@ -430,7 +438,7 @@ var jsmd = (function(){
 
     // increase step counters
     this.step++;
-    this.time += dt;
+    this.time += this.dt;
 
     // compute timestep
     dmax = 0.025
@@ -438,6 +446,24 @@ var jsmd = (function(){
     amax = Math.sqrt(amax);
     this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
   }
+  
+  // run one full timestep, process all items in the compute chain
+  Simulation.prototype.run = function(steps) {
+    // hash object passed as reference to allow datatransfer between computeChain members
+    var store = {}, i, j;
+
+    // run multiple steps
+    for( i = 0; i < steps; ++i ) {
+      // process compute chain
+      for( j = 0; j < this.computeChain.length; ++j ) {
+        this.computeChain[j].call(this,store);
+      }
+    }
+    
+    return store;
+  }
+  
+
   Simulation.prototype.setCanvas = function(canvas) {
     this.canvas = {
       node : canvas,
@@ -651,6 +677,11 @@ var jsmd = (function(){
     Simulation : Simulation,
     Vector : Vector,
 
+    compute : {
+      forces : computeForces,
+      verlet1 : computeVerlet1,
+      verlet2 : computeVerlet2
+    },
     render : {
       atoms : renderAtoms,
       barriers : renderBarriers,

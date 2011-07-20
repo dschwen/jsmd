@@ -53,9 +53,7 @@
       $('#status').text('Running '+it+' MD cycles...');
       setInterval( function() {
         then = new Date();
-        for( var i = 0; i < it; ++i ) {
-          sim.velocityVerlet();
-        }
+        sim.run(it);
         now = new Date();
         ms = now.getTime() - then.getTime();
         $('#status').text( $('#status').text() + ms + 'ms. ');

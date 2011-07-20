@@ -64,8 +64,7 @@
       //sim.dt = 0.1;
       sim.pkapos = [];
       setInterval( function() {
-        sim.velocityVerlet();
-        sim.velocityVerlet();
+        sim.run(2);
         sim.draw();
         count++;
         P += sim.P;

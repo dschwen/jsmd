@@ -7,7 +7,7 @@
     <script type="text/javascript" src="../lib/jquery-1.4.4.min.js"></script>
     <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
   <body>
-    <canvas id="simcan" width="625" height="500"></canvas>
+    <canvas id="simcan" width="625" height="500" style="float: left"></canvas>
     <div id="plot" style="width: 500px; height: 450px; float: right"></div>
     <div>
       <button onclick="heat()">Add heat</button>
@@ -19,21 +19,34 @@
       <div><i>T = <span id="showT"></span></i> energy units</div>
       <div><i>P = <span id="showP"></span></i> pressure units</div>
     </div>
-    <pre id="log"></pre>
+    <div style="width: 50%; float: left; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
     <script type="text/javascript">
 
       var sin60 = Math.sin(Math.PI/3.0),
           ss = 14, sv = new jsmd.Vector(ss,ss*sin60),
+          sc = $('#simcan'),
           sim = new jsmd.Simulation(sv),
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           T = 0.0, P = 0.0, Q = 0.0,
           count = 0, rcount = 0, rup = false, vup = true,
-          logp = document.getElementById('log'),
-          showT = document.getElementById('showT'),
-          showP = document.getElementById('showP'),
+          logp = $('#log'),
+          showT = $('#showT'),
+          showP = $('#showP'),
           cchain = [], tab_tofq = [], tab_voft = [], tab_poft = [];
 
-      sim.setCanvas(document.getElementById('simcan'));
+      // set dimensions of canvas and plot
+      function resize() {
+        var w, h, ww = $(window).width();
+        w =  Math.round(ww/2-10);
+        sc.width(w);
+        $('#plot').width(w);
+        h = Math.round(w*sin60);
+        sc.height(h);
+        $('#plot').height(h);
+      }
+      resize();
+      $(window).resize(resize);
+      sim.setCanvas( sc[0] );
 
       t = new jsmd.AtomType();
       t.r = 0.25;
@@ -97,8 +110,8 @@
           if( count > 10 ) {
             P = Math.round(10000*P/count)/10000;
             T = Math.round(10000*T/count)/10000;
-            showP.innerHTML = P;
-            showT.innerHTML = T;
+            showP.text(P);
+            showT.text(T);
             count = 0;
             rcount++;
             if( rup && rcount > 20 ) {

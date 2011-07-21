@@ -4,8 +4,11 @@
     <title>jsMD example</title>
     <meta charset="utf-8">
     <script type="text/javascript" src="../jsmd.js"></script>
+    <script type="text/javascript" src="../lib/jquery-1.4.4.min.js"></script>
+    <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
   <body>
     <canvas id="simcan" width="625" height="500"></canvas>
+    <div id="plot" style="width: 500px; height: 450px; float: right"></div>
     <div>
       <button onclick="heat()">Add heat</button>
       <button onclick="cool()">Remove heat</button>
@@ -28,7 +31,7 @@
           logp = document.getElementById('log'),
           showT = document.getElementById('showT'),
           showP = document.getElementById('showP'),
-          cchain = [];
+          cchain = [], tab_tofq = [], tab_voft = [], tab_poft = [];
 
       sim.setCanvas(document.getElementById('simcan'));
 
@@ -100,6 +103,10 @@
             rcount++;
             if( rup && rcount > 20 ) {
               log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
+              tab_tofq.push([Q,T]);
+              tab_poft.push([T,P]);
+              tab_voft.push([T,sim.ss.vol()]);
+              $.plot( $('#plot'), [ { data: tab_tofq, color : 'rgb(200,0,0)', label : 'T(Q)' } ] );
               rcount = 0;
               Q += heat();
             }

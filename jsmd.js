@@ -1,5 +1,6 @@
 var jsmd = (function(){
-  var Vector = Vector2d;
+  // depending on which vector class was loaded
+  var Vector = window.Vector2d || window.Vector3d;
 
   // Atom constructor
   function Atom(x,y,z) {

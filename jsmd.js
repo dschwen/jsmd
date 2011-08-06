@@ -1,7 +1,7 @@
 var jsmd = (function(){
   // depending on which vector class was loaded
-  var Vector = window.Vector2d || window.Vector3d;
-
+  var dim, Vector;
+            
   // Atom constructor
   function Atom(x,y,z) {
     this.p = new Vector(x,y,z); // y may be 'undefined' if x is a vector!
@@ -171,7 +171,8 @@ var jsmd = (function(){
       this.nl.data[i] = [];
     }
   }
-  Simulation.prototype.updateNeighborlist = function(dr) {
+
+  function updateNeighborlist2d(dr) {
     // check if update is necessary (call without parameter to force update)
     if( dr !== undefined ) {
       this.nl.dr += 2.0*dr;
@@ -226,6 +227,64 @@ var jsmd = (function(){
     // increase update counter
     this.nl.count++;
   }
+
+  function updateNeighborlist3d(dr) {
+    // check if update is necessary (call without parameter to force update)
+    if( dr !== undefined ) {
+      this.nl.dr += 2.0*dr;
+      if( this.nl.dr < this.rp ) { 
+        return;
+      }
+    }
+    this.nl.dr = 0.0;
+
+    // update Linkcells first
+    this.updateLinkcell()
+
+    // clear Neigborlist
+    this.clearNeighborlist()
+
+    var i,j,i2,j2,k,l,m,
+        ka, la, ll,
+        n = [ [0,1],[1,this.lc.ny-1],[1,0],[1,1] ]; // half the neighbors
+
+    // loop over all cells
+    for( i = 0; i < this.lc.nx; ++i ) {
+      for( j = 0; j < this.lc.ny; ++j ) {
+        // loop over all atoms in local cell
+        ll = this.lc.data[i][j].length;
+        for( k = 0; k < ll; ++k ) {
+          // loop over remaining atoms in local cell
+          ka = this.lc.data[i][j][k];
+          for( l = k+1; l < ll; ++l ) {
+            la = this.lc.data[i][j][l];
+            if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.ss ) < this.rm2 ) {
+              this.nl.data[ka].push(la);
+            }
+          }
+
+          // loop over half the neighbor cells
+          for( m = 0; m < n.length; ++m ) {
+            i2 = (i+n[m][0]) % this.lc.nx;
+            j2 = (j+n[m][1]) % this.lc.ny;
+            // loop over all atoms in that neighbor cells
+            for( l = 0; l < this.lc.data[i2][j2].length; ++l ) {
+              la = this.lc.data[i2][j2][l];
+              if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.ss ) < this.rm2 ) {
+                this.nl.data[ka].push(la);
+              }
+            }
+          }
+        }
+        // end local cell
+      }
+    }
+
+    // increase update counter
+    this.nl.count++;
+  }
+  Simulation.prototype.updateNeighborlist = updateNeighborlist2d;
+
   
   function computeForces(store) {
     var i,j,k,  // integer
@@ -238,8 +297,7 @@ var jsmd = (function(){
       this.atoms[i].f.set(this.f);
     }
     for( i = 0; i < this.barriers.length; ++i ) {
-      this.barriers[i].f.x = 0.0;
-      this.barriers[i].f.y = 0.0;
+      this.barriers[i].f.zero();
     }
     
     // clear virial
@@ -588,6 +646,17 @@ var jsmd = (function(){
 
     return calculateEnergy;
   }
+
+  // configure dimension
+  if( window.Vector2d !== undefined ) {
+    dim = 2;
+    Vector = window.Vector2d;
+  } else if( window.Vector3d !== undefined ) {
+    dim = 3;
+    Vector = window.Vector3d;
+  }
+  else
+    alert('Must load vector2d.js or vector3d.js');
 
   //
   // export public interface

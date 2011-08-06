@@ -83,7 +83,7 @@ Vector3d.prototype.add = function(a) {
   this.y += a.y;
   this.z += a.z;
 }
-Vector.scale = function(a,b) {
+Vector3d.scale = function(a,b) {
   return new Vector3d( a.x*b, a.y*b, a.z*b );
 }
 Vector3d.prototype.scale = function(a) {

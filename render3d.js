@@ -43,7 +43,7 @@ function initRender3D( sim, container ) {
   //geometry.colors = colors;
 
   var sprite = THREE.ImageUtils.loadTexture( "ball.png" );
-  var material = new THREE.ParticleBasicMaterial( { size: 5, map: sprite, vertexColors: false } );
+  var material = new THREE.ParticleBasicMaterial( { size: 0.5, map: sprite, vertexColors: false } );
   material.color.setRGB( 1.0, 0.0, 0.0 );
 
   particles = new THREE.ParticleSystem( geometry, material );

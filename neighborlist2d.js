@@ -41,7 +41,7 @@ Neighborlist2d.prototype.update = function(dr) {
         ka = this.lc.data[i][j][n];
         for( l = n+1; l < ll; ++l ) {
           la = this.lc.data[i][j][l];
-          if( Vector3d.pbcdistance2( sim.atoms[ka].p, sim.atoms[la].p, sim.ss ) < this.lc.rm2 ) {
+          if( Vector2d.pbcdistance2( sim.atoms[ka].p, sim.atoms[la].p, sim.ss ) < this.lc.rm2 ) {
             this.nl.data[ka].push(la);
           }
         }
@@ -53,7 +53,7 @@ Neighborlist2d.prototype.update = function(dr) {
           // loop over all atoms in those neighbor cells
           for( l = 0; l < this.lc.data[i2][j2].length; ++l ) {
             la = this.lc.data[i2][j2][l];
-            if( Vector3d.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, sim.ss ) < this.lc.rm2 ) {
+            if( Vector2d.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, sim.ss ) < this.lc.rm2 ) {
               this.data[ka].push(la);
             }
           }

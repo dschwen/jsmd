@@ -1,6 +1,6 @@
-var jsmd = (function(){
+function generateJSMD(dim) {
   // depending on which vector class was loaded
-  var dim, Vector;
+  var Vector, Linkcell, Neighborlist;
             
   // Atom constructor
   function Atom(x,y,z) {
@@ -90,12 +90,6 @@ var jsmd = (function(){
     // setup default compute chain
     this.computeChain = [ computeVerlet1, computeForces, computeVerlet2 ];
     
-    // linkcell data
-    this.lc = {};
-
-    // neighborlist data
-    this.nl = { dr : 0.0, data : [], count : 0 };
-
     // timestep data
     this.dt = 0.0;   // set by dynamic timestepper
     this.step = 0;   // number of current MD step
@@ -132,10 +126,10 @@ var jsmd = (function(){
     this.rc = rc;
     this.rc2 = rc*rc;
 
-    // build the 2D linkcell grid
+    // initialize Linkcell and Neighborlist classes
     this.lc = new Linkcell(this);
+    this.nl = new Neighborlist(this.lc);
   }
-  
  
   function computeForces(store) {
     var i,j,k,  // integer
@@ -221,7 +215,7 @@ var jsmd = (function(){
       rmax = Math.max( rmax, dp.len2() );
     }
 
-    this.updateNeighborlist(Math.sqrt(rmax));
+    this.nl.update(Math.sqrt(rmax));
   }
 
   // second velocity verlet step
@@ -499,16 +493,32 @@ var jsmd = (function(){
   }
 
   // configure dimension
-  if( window.Vector2d !== undefined ) {
-    dim = 2;
+  var missing = [];
+  if( dim === 2 ) {
+    if( window.Vector2d === undefined ) { missing.push('vector2d.js'); }
+    if( window.Linkcell2d === undefined ) { missing.push('linkcell2d.js'); }
+    if( window.Neighborlist2d === undefined ) { missing.push('neighborlist2d.js'); }
+    if( missing.length > 0 ) {
+      alert('Must load ' + missing.join(',') );
+    }
     Vector = window.Vector2d;
-  } else if( window.Vector3d !== undefined ) {
-    dim = 3;
+    Linkcell = window.Linkcell2d;
+    Neighborlist = window.Neighborlist2d;
+  } else if( dim === 3 ) {
+    if( window.Vector3d === undefined ) { missing.push('vector3d.js'); }
+    if( window.Linkcell3d === undefined ) { missing.push('linkcell3d.js'); }
+    if( window.Neighborlist3d === undefined ) { missing.push('neighborlist3d.js'); }
+    if( missing.length > 0 ) {
+      alert('Must load ' + missing.join(',') );
+    }
     Vector = window.Vector3d;
+    Linkcell = window.Linkcell3d;
+    Neighborlist = window.Neighborlist3d;
   }
-  else
-    alert('Must load vector2d.js or vector3d.js');
-
+  else {
+    alert('Dimension parameter must be 2 or 3');
+  }
+  
   //
   // export public interface
   //
@@ -542,4 +552,6 @@ var jsmd = (function(){
       ZBL : energyZBL
     }
   };
-})();
+};
+
+var jsmd = generateJSMD(2);

@@ -145,6 +145,127 @@ var jsmd = (function(){
     }
     this.lc.data = l;
   }
+  
+  
+  
+  
+  
+  
+  
+  
+      // build the 3D linkcell grid
+    l = new Array(this.lc.nx);
+    for( i = 0; i < this.lc.nx; ++i ) {
+      l[i] = new Array(this.lc.ny);
+      for( j = 0; j < this.lc.ny; ++j ) {
+        l[i][j] = new Array(this.lc.nz);
+      }
+    }
+    this.lc.data = l;
+  }
+  Simulation.prototype.clearLinkcell = function() {
+    // clear each cell
+    var i,j,k;
+    for( i = 0; i < this.lc.nx; ++i ) {
+      for( j = 0; j < this.lc.ny; ++j ) {
+        for( k = 0; k < this.lc.nz; ++k ) {
+          this.lc.data[i][j][k] = [];
+        }
+      }
+    }
+  }
+  Simulation.prototype.updateLinkcell = function() {
+    // clear first
+    this.clearLinkcell();
+
+    // repopulate with all atoms
+    var lx, ly,lz, i;
+    for( i = 0; i < this.atoms.length; ++i ) {
+      lx = Math.floor(this.atoms[i].p.x/this.lc.dx) % this.lc.nx;
+      ly = Math.floor(this.atoms[i].p.y/this.lc.dy) % this.lc.ny;
+      lz = Math.floor(this.atoms[i].p.z/this.lc.dz) % this.lc.nz;
+      this.lc.data[lx][ly][lz].push(i);
+    }
+  }
+  Simulation.prototype.clearNeighborlist = function() {
+    for( var i = 0; i < this.atoms.length; ++i ) {
+      this.nl.data[i] = [];
+    }
+  }
+  Simulation.prototype.updateNeighborlist = function(dr) {
+    // check if update is necessary (call without parameter to force update)
+    if( dr !== undefined ) {
+      this.nl.dr += 2.0*dr;
+      if( this.nl.dr < this.rp ) { 
+        return;
+      }
+    }
+    this.nl.dr = 0.0;
+
+    // update Linkcells first
+    this.updateLinkcell()
+
+    // clear Neigborlist
+    this.clearNeighborlist()
+
+    var i,j,k,i2,j2,k2,n,l,m,
+        ka, la, ll,
+        // half the neighbors
+        neigh = [ 
+          [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1], [0,1,1], [1,1,1], 
+          [this.lc.nx-1,1,0], [1,0,this.lc.nz-1], [0,this.lc.ny-1,1], 
+          [this.lc.nx-1,1,1], [1,this.lc.ny-1,1],[ 1,1,this.lc.nz-1] 
+        ];
+
+    // loop over all cells
+    for( i = 0; i < this.lc.nx; ++i ) {
+      for( j = 0; j < this.lc.ny; ++j ) {
+        for( k = 0; k < this.lc.nz; ++k ) {
+
+          // loop over all atoms in local cell
+          ll = this.lc.data[i][j][k].length;
+          for( n = 0; n < ll; ++n ) {
+            // loop over remaining atoms in local cell
+            ka = this.lc.data[i][j][k][n];
+            for( l = n+1; l < ll; ++l ) {
+              la = this.lc.data[i][j][k][l];
+              if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.w, this.h, this.d ) < this.rm2 ) {
+                this.nl.data[ka].push(la);
+              }
+            }
+
+            // loop over half the neighbor cells
+            for( m = 0; m < neigh.length; ++m ) {
+              i2 = (i+neigh[m][0]) % this.lc.nx;
+              j2 = (j+neigh[m][1]) % this.lc.ny;
+              k2 = (k+neigh[m][2]) % this.lc.nz;
+              // loop over all atoms in those neighbor cells
+              for( l = 0; l < this.lc.data[i2][j2][k2].length; ++l ) {
+                la = this.lc.data[i2][j2][k2][l];
+                if( jsmd.Vector.pbcdistance2( this.atoms[ka].p, this.atoms[la].p, this.w, this.h, this.d ) < this.rm2 ) {
+                  this.nl.data[ka].push(la);
+                }
+              }
+            }
+          }
+          // end local cell
+
+        }
+      }
+    }
+
+    // increase update counter
+    this.nl.count++;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
   Simulation.prototype.clearLinkcell = function() {
     // clear each cell
     var i,j;

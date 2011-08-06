@@ -18,7 +18,6 @@ function Linkcell2d( sim ) {
   l = new Array(this.nx);
   for( i = 0; i < this.nx; ++i ) {
     l[i] = new Array(this.ny);
-    }
   }
   this.data = l;
 }

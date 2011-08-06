@@ -11,7 +11,8 @@
   <body>
     <div id="status"></div>
     <script type="text/javascript">
-      var ss = 20, sv = new jsmd.Vector(ss,ss*0.8),
+      var jsmd = initJSMD(2),
+          ss = 20, sv = new jsmd.Vector(ss,ss*0.8),
           sim = new jsmd.Simulation(sv),
           p = new jsmd.Vector(), t,
           c = 0, a, pka;
@@ -51,7 +52,7 @@
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
       sim.setInteraction( [1,1], force );
-      sim.updateNeighborlist();
+      sim.nl.update();
 
       var it = 10;
       var then, now, ms;

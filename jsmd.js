@@ -1,4 +1,4 @@
-function generateJSMD(dim) {
+function initJSMD(dim) {
   // depending on which vector class was loaded
   var Vector, Linkcell, Neighborlist;
             
@@ -553,5 +553,3 @@ function generateJSMD(dim) {
     }
   };
 };
-
-var jsmd = generateJSMD(2);

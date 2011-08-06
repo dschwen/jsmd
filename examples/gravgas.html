@@ -3,6 +3,9 @@
   <head>
     <title>jsMD example</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="../vector2d.js"></script>
+    <script type="text/javascript" src="../linkcell2d.js"></script>
+    <script type="text/javascript" src="../neighborlist2d.js"></script>
     <script type="text/javascript" src="../jsmd.js"></script>
   <body>
     <canvas id="simcan" width="625" height="500"></canvas>
@@ -10,7 +13,8 @@
     <div id="log"></div>
     <script type="text/javascript">
 
-      var ss = 40,
+      var jsmd = initJSMD(2),
+          ss = 40,
           sv = new jsmd.Vector(ss,ss*0.8),
           sim = new jsmd.Simulation(sv),
           t, c = 0, a, ax, ay, x, y, i;
@@ -59,7 +63,7 @@
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
       sim.setInteraction( [1,1], force );
-      sim.updateNeighborlist();
+      sim.nl.update();
 
       // gravitation
       sim.f.y = 0.5;

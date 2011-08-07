@@ -33,17 +33,17 @@ function initRender3D( sim, container ) {
   for( i = 0; i < sim.atoms.length; ++i )
   {
     // TODO: element styling
-    vector = new THREE.Vector3( sim.atoms[i].x-sim.ss.x/2, sim.atoms[i].y-sim.ss.y/2, sim.atoms[i].z-sim.ss.z/2 );
+    vector = new THREE.Vector3( sim.atoms[i].p.x-sim.ss.x/2, sim.atoms[i].p.y-sim.ss.y/2, sim.atoms[i].p.z-sim.ss.z/2 );
     geometry.vertices.push( new THREE.Vertex( vector ) );
   }
-  camera.position.x = 50;
-  camera.position.y = 100;
-  camera.position.z = 1200;
-  setTarget(1000,1000,-1000)
+  camera.position.x = sim.ss.x/2;
+  camera.position.y = sim.ss.y/2;
+  camera.position.z = -70;
+  //setTarget(1000,1000,-1000)
   //geometry.colors = colors;
 
   var sprite = THREE.ImageUtils.loadTexture( "ball.png" );
-  var material = new THREE.ParticleBasicMaterial( { size: 0.5, map: sprite, vertexColors: false } );
+  var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: false } );
   material.color.setRGB( 1.0, 0.0, 0.0 );
 
   particles = new THREE.ParticleSystem( geometry, material );
@@ -52,16 +52,16 @@ function initRender3D( sim, container ) {
   scene.addObject( particles );
 
   var light = new THREE.DirectionalLight( 0xffffff );
-  light.position.x = 0;
+  light.position.x = 1;
   light.position.y = 0;
-  light.position.z = 1;
+  light.position.z = 0;
   scene.addLight( light );
 
   $(container).empty().append( renderer.domElement );
-  $(renderer.domElement).bind( 'mousemove', onMouseMove );
+  /*$(renderer.domElement).bind( 'mousemove', onMouseMove );
   $(renderer.domElement).bind( 'mousedown', function() { dragging = true; } );
   $(renderer.domElement).bind( 'mouseup', function() { dragging = false; } );
-  $(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );
+  $(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );*/
 
 
   function setTarget(x,y,z) {
@@ -105,12 +105,13 @@ function initRender3D( sim, container ) {
 
   function updateScene() 
   {
+    var i;
     // update vertices
     for( i = 0; i < sim.atoms.length; ++i )
     {
-      geometry.vertices[i].position.x = sim.atoms[i].x;
-      geometry.vertices[i].position.y = sim.atoms[i].y;
-      geometry.vertices[i].position.z = sim.atoms[i].z;
+      particles.geometry.vertices[i].position.x = sim.atoms[i].p.x;
+      particles.geometry.vertices[i].position.y = sim.atoms[i].p.y;
+      particles.geometry.vertices[i].position.z = sim.atoms[i].p.z;
     }
     particles.geometry.__dirtyVertices = true;
     renderer.render( scene, camera );

@@ -95,6 +95,9 @@ function initJSMD(dim) {
     this.step = 0;   // number of current MD step
     this.time = 0.0; // expired simulation time
 
+    // maximum spatial step for dynamic timestep algorithm
+    this.dmax = 0.025;
+
     // drag factor (set to 1 to disable drag)
     this.drag = 0.995;
     
@@ -251,10 +254,9 @@ function initJSMD(dim) {
     this.time += this.dt;
 
     // compute timestep
-    dmax = 0.025
     vmax = Math.sqrt(vmax);
     amax = Math.sqrt(amax);
-    this.dt = Math.min( 0.01, dmax/vmax, Math.sqrt(2*dmax/amax) );
+    this.dt = Math.min( 0.01, this.dmax/vmax, Math.sqrt(2*this.dmax/amax) );
   }
 
   // Berendsen hydrostatic barostat factory function

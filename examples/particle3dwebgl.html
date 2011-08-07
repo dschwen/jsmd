@@ -60,6 +60,7 @@
       }
 
       sim.setCutOff(4.0,0.5);
+      sim.dmax = 0.05;
 
       // tabulate the morse potential with all default options
       var force = jsmd.force.tabulated( jsmd.force.morse(1.2) );

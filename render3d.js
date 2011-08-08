@@ -2,7 +2,7 @@ function initRender3D( sim, container ) {
   var container;
 
   var renderer = null, i;
-  var cam = { phi: 0, theta: 0, r: 100 };
+  var cam = { phi: 0, theta: Math.PI/2, r: 100 };
   var intHandler = null;
   var dragging = false;
 
@@ -84,24 +84,23 @@ function initRender3D( sim, container ) {
   scene.addLight( light );
 
   $(container).empty().append( renderer.domElement );
-  $(renderer.domElement).bind( 'mousemove', updateCamera  );
+  $(renderer.domElement).bind( 'mousemove', function(e) {
+    if( dragging !== false ) {
+      cam.theta += ( dragging.x -e.clientX ) * 0.005;
+      cam.phi -= ( dragging.y -e.clientY ) * 0.01;
+      dragging = { x: e.clientX, y: e.clientY };
+      updateCamera();
+    }
+  } );
   $(renderer.domElement).bind( 'mousedown', function(e) { dragging = { x: e.clientX, y: e.clientY }; } );
   $(renderer.domElement).bind( 'mouseup', function() { dragging = false;  } );
-  //$(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );
+  $(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );
 
 
-  function updateCamera(e) {
-    if( e !== undefined && dragging !== false ) {
-      var dt = ( dragging.x -e.clientX ) * 0.005 ,
-          df = -( dragging.y -e.clientY ) * 0.01
-      camera.position.x = cam.r * Math.sin(cam.theta+dt) * Math.cos(cam.phi+df);
-      camera.position.y = cam.r * Math.sin(cam.theta+dt) * Math.sin(cam.phi+df);
-      camera.position.z = cam.r * Math.cos(cam.theta+dt);
-    } else {
-      camera.position.x = cam.r * Math.sin(cam.theta) * Math.cos(cam.phi);
-      camera.position.y = cam.r * Math.sin(cam.theta) * Math.sin(cam.phi);
-      camera.position.z = cam.r * Math.cos(cam.theta);
-    }
+  function updateCamera() {
+    camera.position.x = cam.r * Math.sin(cam.theta) * Math.cos(cam.phi);
+    camera.position.y = cam.r * Math.sin(cam.theta) * Math.sin(cam.phi);
+    camera.position.z = cam.r * Math.cos(cam.theta);
   }
 
   function updateScene() 

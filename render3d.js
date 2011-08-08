@@ -1,7 +1,7 @@
 function initRender3D( sim, container ) {
   var container;
 
-  var renderer = null, sx=0, sy=0, sz=0, rmax = 1000;
+  var renderer = null, i;
   var mesh, zmesh, lightMesh, geometry;
 
   var target = { x:0, y:0, z:0 };
@@ -15,7 +15,7 @@ function initRender3D( sim, container ) {
   var scene = new THREE.Scene();
   scene.fog = new THREE.Fog( 0xffffff, 1, 10000 );
 
-  var geometry;
+  var geometry, lines = [];
 
   // select renderer
   if (typeof Float32Array != "undefined") {
@@ -29,6 +29,10 @@ function initRender3D( sim, container ) {
   renderer.setSize( cw, ch );
   geometry = new THREE.Geometry();
 
+  var sprite = THREE.ImageUtils.loadTexture( "ball.png" );
+  var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: false } );
+  material.color.setRGB( 1.0, 0.0, 0.0 );
+
   // atoms
   for( i = 0; i < sim.atoms.length; ++i )
   {
@@ -36,20 +40,42 @@ function initRender3D( sim, container ) {
     vector = new THREE.Vector3( sim.atoms[i].p.x-sim.ss.x/2, sim.atoms[i].p.y-sim.ss.y/2, sim.atoms[i].p.z-sim.ss.z/2 );
     geometry.vertices.push( new THREE.Vertex( vector ) );
   }
-  camera.position.x = sim.ss.x/2;
-  camera.position.y = sim.ss.y/2;
-  camera.position.z = -70;
-  //setTarget(1000,1000,-1000)
-  //geometry.colors = colors;
-
-  var sprite = THREE.ImageUtils.loadTexture( "ball.png" );
-  var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: false } );
-  material.color.setRGB( 1.0, 0.0, 0.0 );
 
   particles = new THREE.ParticleSystem( geometry, material );
   particles.sortParticles = true;
   particles.updateMatrix();
   scene.addObject( particles );
+
+  
+  // lines
+  var lm = new THREE.LineBasicMaterial( { color: 0xff0000, opacity: 0.5 , linewidth: 2} ),
+      lg = [ 
+        [ [1,0,0], [1,1,0] ], [ [0,1,0], [1,1,0] ], 
+        [ [1,0,0], [1,1,0] ], [ [0,1,0], [1,1,0] ], 
+        [ [0,0,0], [0,0,1] ], [ [1,0,0], [1,0,1] ],
+        [ [0,1,0], [0,1,1] ], [ [1,1,0], [1,1,1] ],
+        [ [1,0,1], [1,1,1] ], [ [0,1,1], [1,1,1] ], 
+        [ [1,0,1], [1,1,1] ], [ [0,1,1], [1,1,1] ]
+      ];
+
+  for (i = 0; i < lg.length; i++) {
+    lines[i] = new THREE.Geometry();
+
+    vector0 = new THREE.Vector3( (lg[i][0][0]-0.5)*sim.ss.x,  (lg[i][0][1]-0.5)*sim.ss.y, (lg[i][0][2]-0.5)*sim.ss.z );
+    geometry.vertices.push( new THREE.Vertex( vector0 ) );
+
+    vector1 = new THREE.Vector3( (lg[i][1][0]-0.5)*sim.ss.x,  (lg[i][1][1]-0.5)*sim.ss.y, (lg[i][1][2]-0.5)*sim.ss.z );
+    geometry.vertices.push( new THREE.Vertex( vector1 ) );
+
+    lines[i] = new THREE.Line( geometry, lm ) 
+    scene.addObject(lines[i]);
+  }
+
+  camera.position.x = sim.ss.x/2;
+  camera.position.y = sim.ss.y/2;
+  camera.position.z = -70;
+  //setTarget(1000,1000,-1000)
+  //geometry.colors = colors;
 
   var light = new THREE.DirectionalLight( 0xffffff );
   light.position.x = 1;

@@ -3,6 +3,9 @@
   <head>
     <title>jsMD example</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="../vector2d.js"></script>
+    <script type="text/javascript" src="../linkcell2d.js"></script>
+    <script type="text/javascript" src="../neighborlist2d.js"></script>
     <script type="text/javascript" src="../jsmd.js"></script>
     <script type="text/javascript" src="../lib/jquery-1.4.4.min.js"></script>
     <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
@@ -22,7 +25,8 @@
     <div style="width: 50%; float: left; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
     <script type="text/javascript">
 
-      var sin60 = Math.sin(Math.PI/3.0),
+      var jsmd = initJSMD(2),
+          sin60 = Math.sin(Math.PI/3.0),
           ss = 14, sv = new jsmd.Vector(ss,ss*sin60),
           sc = $('#simcan'),
           sim = new jsmd.Simulation(sv),
@@ -75,7 +79,7 @@
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
       sim.setInteraction( [1,1], force );
-      sim.updateNeighborlist();
+      sim.nl.update();
       sim.drag = 1.0;
 
       //sim.renderChain = [ jsmd.render.atoms, renderPKA ]; // , renderEnergies

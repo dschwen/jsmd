@@ -2,9 +2,7 @@ function initRender3D( sim, container ) {
   var container;
 
   var renderer = null, i;
-  var mesh, zmesh, lightMesh, geometry;
-
-  var target = { x:0, y:0, z:0 };
+  var cam = { phi: 0, theta: 0, r: 100 };
   var intHandler = null;
   var dragging = false;
 
@@ -37,7 +35,9 @@ function initRender3D( sim, container ) {
   for( i = 0; i < sim.atoms.length; ++i )
   {
     // TODO: element styling
-    vector = new THREE.Vector3( sim.atoms[i].p.x-sim.ss.x/2, sim.atoms[i].p.y-sim.ss.y/2, sim.atoms[i].p.z-sim.ss.z/2 );
+    vector = new THREE.Vector3( sim.atoms[i].p.x-sim.ss.x/2, 
+                                sim.atoms[i].p.y-sim.ss.y/2, 
+                                sim.atoms[i].p.z-sim.ss.z/2 );
     geometry.vertices.push( new THREE.Vertex( vector ) );
   }
 
@@ -51,31 +51,31 @@ function initRender3D( sim, container ) {
   var lm = new THREE.LineBasicMaterial( { color: 0xff0000, opacity: 0.5 , linewidth: 2} ),
       lg = [ 
         [ [1,0,0], [1,1,0] ], [ [0,1,0], [1,1,0] ], 
-        [ [1,0,0], [1,1,0] ], [ [0,1,0], [1,1,0] ], 
+        [ [1,0,0], [0,0,0] ], [ [0,1,0], [0,0,0] ], 
         [ [0,0,0], [0,0,1] ], [ [1,0,0], [1,0,1] ],
         [ [0,1,0], [0,1,1] ], [ [1,1,0], [1,1,1] ],
         [ [1,0,1], [1,1,1] ], [ [0,1,1], [1,1,1] ], 
-        [ [1,0,1], [1,1,1] ], [ [0,1,1], [1,1,1] ]
+        [ [0,0,1], [0,1,1] ], [ [1,0,1], [0,0,1] ]
       ];
 
   for (i = 0; i < lg.length; i++) {
-    lines[i] = new THREE.Geometry();
+    geometry = new THREE.Geometry();
 
-    vector0 = new THREE.Vector3( (lg[i][0][0]-0.5)*sim.ss.x,  (lg[i][0][1]-0.5)*sim.ss.y, (lg[i][0][2]-0.5)*sim.ss.z );
+    vector0 = new THREE.Vector3( (lg[i][0][0]-0.5)*sim.ss.x,  
+                                 (lg[i][0][1]-0.5)*sim.ss.y, 
+                                 (lg[i][0][2]-0.5)*sim.ss.z );
     geometry.vertices.push( new THREE.Vertex( vector0 ) );
 
-    vector1 = new THREE.Vector3( (lg[i][1][0]-0.5)*sim.ss.x,  (lg[i][1][1]-0.5)*sim.ss.y, (lg[i][1][2]-0.5)*sim.ss.z );
+    vector1 = new THREE.Vector3( (lg[i][1][0]-0.5)*sim.ss.x,  
+                                 (lg[i][1][1]-0.5)*sim.ss.y, 
+                                 (lg[i][1][2]-0.5)*sim.ss.z );
     geometry.vertices.push( new THREE.Vertex( vector1 ) );
 
     lines[i] = new THREE.Line( geometry, lm ) 
     scene.addObject(lines[i]);
   }
 
-  camera.position.x = sim.ss.x/2;
-  camera.position.y = sim.ss.y/2;
-  camera.position.z = -70;
-  //setTarget(1000,1000,-1000)
-  //geometry.colors = colors;
+  updateCamera();
 
   var light = new THREE.DirectionalLight( 0xffffff );
   light.position.x = 1;
@@ -84,48 +84,23 @@ function initRender3D( sim, container ) {
   scene.addLight( light );
 
   $(container).empty().append( renderer.domElement );
-  /*$(renderer.domElement).bind( 'mousemove', onMouseMove );
-  $(renderer.domElement).bind( 'mousedown', function() { dragging = true; } );
-  $(renderer.domElement).bind( 'mouseup', function() { dragging = false; } );
-  $(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );*/
+  $(renderer.domElement).bind( 'mousemove', updateCamera  );
+  $(renderer.domElement).bind( 'mousedown', function(e) { dragging = { x: e.clientX, y: e.clientY }; } );
+  $(renderer.domElement).bind( 'mouseup', function() { dragging = false;  } );
+  //$(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );
 
 
-  function setTarget(x,y,z) {
-    target.x=x;
-    target.y=y;
-    target.z=z;
-    if( intHandler === null ) {
-      intHandler = setInterval( loop, 1000 / 25 );
-    }
-  }
-
-  function onMouseMove(event) {
-    var radius = 2*event.clientY/ch * rmax;
-    var theta  = ( event.clientX/cw - 0.5 ) * 4.0 * Math.PI;
-    if( dragging ) {
-      target.x = Math.sin(theta)*radius;
-      target.y = 0;
-      target.z = Math.cos(theta)*radius;
-      if( intHandler === null ) {
-        intHandler = setInterval( loop, 1000 / 25 );
-      }
-    }
-  }
-
-  function loop() {
-    var dx = ( target.x - camera.position.x ) * .05;
-    var dy = ( -target.y - camera.position.y ) * .05;
-    var dz = ( target.z - camera.position.z ) * .05;
-
-    camera.position.x += dx;
-    camera.position.y += dy;
-    camera.position.z += dz;
-    //$('#chancoord').text( camera.position.x.toFixed() + ',' + (-camera.position.y).toFixed() );
-    renderer.render( scene, camera );
-
-    if( Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1 && Math.abs(dz) < 0.1  ) {
-      clearInterval(intHandler);
-      intHandler = null;
+  function updateCamera(e) {
+    if( e !== undefined && dragging !== false ) {
+      var dt = ( dragging.x -e.clientX ) * 0.005 ,
+          df = -( dragging.y -e.clientY ) * 0.01
+      camera.position.x = cam.r * Math.sin(cam.theta+dt) * Math.cos(cam.phi+df);
+      camera.position.y = cam.r * Math.sin(cam.theta+dt) * Math.sin(cam.phi+df);
+      camera.position.z = cam.r * Math.cos(cam.theta+dt);
+    } else {
+      camera.position.x = cam.r * Math.sin(cam.theta) * Math.cos(cam.phi);
+      camera.position.y = cam.r * Math.sin(cam.theta) * Math.sin(cam.phi);
+      camera.position.z = cam.r * Math.cos(cam.theta);
     }
   }
 
@@ -135,9 +110,9 @@ function initRender3D( sim, container ) {
     // update vertices
     for( i = 0; i < sim.atoms.length; ++i )
     {
-      particles.geometry.vertices[i].position.x = sim.atoms[i].p.x;
-      particles.geometry.vertices[i].position.y = sim.atoms[i].p.y;
-      particles.geometry.vertices[i].position.z = sim.atoms[i].p.z;
+      particles.geometry.vertices[i].position.x = sim.atoms[i].p.x - sim.ss.x/2;
+      particles.geometry.vertices[i].position.y = sim.atoms[i].p.y - sim.ss.y/2;
+      particles.geometry.vertices[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;
     }
     particles.geometry.__dirtyVertices = true;
     renderer.render( scene, camera );

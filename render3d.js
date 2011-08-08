@@ -92,6 +92,7 @@ function initRender3D( sim, container ) {
       updateCamera();
     }
   } );
+  $(renderer.domElement).mousewheel( function(e,delta) { cam.r += delta * 10; updateCamera();  } );
   $(renderer.domElement).bind( 'mousedown', function(e) { dragging = { x: e.clientX, y: e.clientY }; } );
   $(renderer.domElement).bind( 'mouseup', function() { dragging = false;  } );
   $(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );

@@ -88,7 +88,7 @@ function initJSMD(dim) {
     this.renderChain = [ renderAtoms, renderForces, renderBarriers ];
 
     // setup default compute chain
-    this.computeChain = [ computeVerlet1, computeForces, computeVerlet2 ];
+    this.computeChain = [ computeVerlet1, computeWrapUpdate, computeForces, computeVerlet2 ];
     
     // timestep data
     this.dt = 0.0;   // set by dynamic timestepper
@@ -202,8 +202,9 @@ function initJSMD(dim) {
   
   // first velocity verlet step
   function computeVerlet1(store) {
-    var i, m, v2, rmax = 0.0,
+    var i, m, v2, 
         dp = new jsmd.Vector();
+    store.rmax = 0.0;
 
     // first velocity verlet step
     for( i = 0; i < this.atoms.length; ++i ) {
@@ -211,16 +212,47 @@ function initJSMD(dim) {
       dp.set( this.atoms[i].v ); dp.scale(this.dt); // dp = v*dt
       dp.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt*this.dt) );
       this.atoms[i].p.add(dp);
-      this.atoms[i].p.wrap(this.ss);
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt) );
 
       // track maximum displacement
-      rmax = Math.max( rmax, dp.len2() );
+      store.rmax = Math.max( store.rmax, dp.len2() );
     }
-
-    this.nl.update(Math.sqrt(rmax));
   }
-
+  
+  // wrap atoms and update neighbor lists (needs store.rmax)
+  function computeWrapUpdate(store) {
+    var i;
+    for( i = 0; i < this.atoms.length; ++i ) {
+      this.atoms[i].p.wrap(this.ss);
+    }
+    this.nl.update(Math.sqrt(store.rmax));
+  }
+  
+  // wrap atoms and update neighbor lists (needs store.rmax)
+  function computeBounce(store) {
+    var i, p, v;
+    for( i = 0; i < this.atoms.length; ++i ) {
+      p = this.atoms[i].p;
+      v = this.atoms[i].v;
+      if( p.x < 0 ) {
+        p.x = -p.x; v.x = -v.x;
+      } else if ( p.x > this.ss.x ) {
+        p.x = 2.0*this.ss.x - p.x; v.x = -v.x;
+      }
+      if( p.y < 0 ) {
+        p.y = -p.y; v.y = -v.y;
+      } else if ( p.y > this.ss.y ) {
+        p.y = 2.0*this.ss.y - p.y; v.y = -v.y;
+      }
+      if( p.z < 0 ) {
+        p.z = -p.z; v.z = -v.z;
+      } else if ( p.z > this.ss.z ) {
+        p.z = 2.0*this.ss.z - p.z; v.z = -v.z;
+      }
+    }
+    //this.nl.update(Math.sqrt(store.rmax));
+  }
+  
   // second velocity verlet step
   function computeVerlet2(store) {
     var i, m, v2, vmax = 0.0, amax = 0.0, dmax;
@@ -535,6 +567,8 @@ function initJSMD(dim) {
       forces : computeForces,
       verlet1 : computeVerlet1,
       verlet2 : computeVerlet2,
+      bounce : computeBounce,
+      wrapUpdate : computeWrapUpdate,
       berendsenP: computeBerendsenP
     },
     render : {

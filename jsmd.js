@@ -467,10 +467,11 @@ function initJSMD(dim) {
   }
 
   // return a force linearly interpolated from tabulated values of function f (fast!)
-  function forceTabulated(f, dr_, rc_ ) {
+  function forceTabulated(f, dr_, rc_, noint_ ) {
     // parameters and pretabulated values stored in closure
     var dr = dr_ !== undefined ? dr_ : 0.01,
         rc = rc_ !== undefined ? rc_ : 10.0,
+        doint = noint !== true,
         mul = rc/dr,
         table, n = Math.round(mul*rc+20),
         i;
@@ -485,13 +486,20 @@ function initJSMD(dim) {
       table[i] = f.call( this, i/mul );
     }
 
-    // interpolation function (called from updateForces)
-    return function(r) {
+    // linear interpolation function
+    function linint(r) {
       r *= mul;
       var b = Math.floor(r);
       r -= b;
       return (1-r)*table[b] + r*table[b+1];
     }
+    // no interpolation
+    function noint(r) {
+      return table[Math.floor(r*mul)];
+    }
+    
+    // return evaluation function (called from updateForces)
+    return doint ? linint : noint;
   }
 
   // return numerical derivative of f

@@ -49,19 +49,11 @@ function initRender3D( sim, container ) {
         [ [0,0,1], [0,1,1] ], [ [1,0,1], [0,0,1] ]
       ];
 
+  // initialize empty geometry for simulation box
   for (i = 0; i < lg.length; i++) {
     geometry = new THREE.Geometry();
-
-    vector0 = new THREE.Vector3( (lg[i][0][0]-0.5)*sim.ss.x,  
-                                 (lg[i][0][1]-0.5)*sim.ss.y, 
-                                 (lg[i][0][2]-0.5)*sim.ss.z );
-    geometry.vertices.push( new THREE.Vertex( vector0 ) );
-
-    vector1 = new THREE.Vector3( (lg[i][1][0]-0.5)*sim.ss.x,  
-                                 (lg[i][1][1]-0.5)*sim.ss.y, 
-                                 (lg[i][1][2]-0.5)*sim.ss.z );
-    geometry.vertices.push( new THREE.Vertex( vector1 ) );
-
+    geometry.vertices.push( new THREE.Vertex(new THREE.Vector3(0,0,0) ) );
+    geometry.vertices.push( new THREE.Vertex(new THREE.Vector3(0,0,0) ) );
     lines[i] = new THREE.Line( geometry, lm ) 
     scene.addObject(lines[i]);
   }
@@ -83,7 +75,7 @@ function initRender3D( sim, container ) {
       updateCamera();
     }
   } );
-  $(renderer.domElement).mousewheel( function(e,delta) { cam.r += delta * 10; updateCamera();  } );
+  $(renderer.domElement).mousewheel( function(e,delta) { cam.r += delta * 10; updateCamera(); return false;  } );
   $(renderer.domElement).bind( 'mousedown', function(e) { dragging = { x: e.clientX, y: e.clientY }; } );
   $(renderer.domElement).bind( 'mouseup', function() { dragging = false;  } );
   $(renderer.domElement).bind( 'mouseout', function() { dragging = false; } );
@@ -97,7 +89,7 @@ function initRender3D( sim, container ) {
 
   function updateScene() 
   {
-    var i;
+    var i,j;
     
     // did the number of atoms in the scene change?
     if( sim.atoms.length < particles.geometry.vertices.length ) {
@@ -117,6 +109,17 @@ function initRender3D( sim, container ) {
       particles.geometry.vertices[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;
     }
     particles.geometry.__dirtyVertices = true;
+
+    // update simulation box outline
+    for (i = 0; i < lg.length; i++) {
+      for( j = 0; j < 2; ++j ) {
+        lines[i].geometry.vertices[j].position.x = (lg[i][j][0]-0.5)*sim.ss.x;
+        lines[i].geometry.vertices[j].position.y = (lg[i][j][1]-0.5)*sim.ss.y; 
+        lines[i].geometry.vertices[j].position.z = (lg[i][j][2]-0.5)*sim.ss.z;
+        lines[i].geometry.__dirtyVertices = true;
+      }
+    }
+
     renderer.render( scene, camera );
   }
 

@@ -31,16 +31,7 @@ function initRender3D( sim, container ) {
   var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: false } );
   material.color.setRGB( 1.0, 0.0, 0.0 );
 
-  // atoms
-  for( i = 0; i < sim.atoms.length; ++i )
-  {
-    // TODO: element styling
-    vector = new THREE.Vector3( sim.atoms[i].p.x-sim.ss.x/2, 
-                                sim.atoms[i].p.y-sim.ss.y/2, 
-                                sim.atoms[i].p.z-sim.ss.z/2 );
-    geometry.vertices.push( new THREE.Vertex( vector ) );
-  }
-
+  // atoms (added dynamically)
   particles = new THREE.ParticleSystem( geometry, material );
   particles.sortParticles = true;
   particles.updateMatrix();
@@ -107,6 +98,17 @@ function initRender3D( sim, container ) {
   function updateScene() 
   {
     var i;
+    
+    // did the number of atoms in the scene change?
+    if( sim.atoms.length < particles.geometry.vertices.length ) {
+      particles.geometry.vertices.splice( sim.atoms.length, particles.geometry.vertices.length-sim.atoms.length );
+    }
+    if( sim.atoms.length > particles.geometry.vertices.length ) {
+      for( i = particles.geometry.vertices.length; i < sim.atoms.length; ++i ) {
+        particles.geometry.vertices.push( new THREE.Vertex( new THREE.Vector3(0,0,0) ) );
+      }
+    }
+    
     // update vertices
     for( i = 0; i < sim.atoms.length; ++i )
     {

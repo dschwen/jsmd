@@ -472,8 +472,15 @@ function initJSMD(dim) {
     var dr = dr_ !== undefined ? dr_ : 0.01,
         rc = rc_ !== undefined ? rc_ : 10.0,
         mul = rc/dr,
-        table = [],
+        table, n = Math.round(mul*rc+20),
         i;
+        
+    if (typeof Float32Array != "undefined") {   
+      table = new Float32Array(n);
+    } else {
+      table = new Array(n);
+    }
+
     for( i = 0; i <= mul*rc+10; ++i ) {
       table[i] = f.call( this, i/mul );
     }

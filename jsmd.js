@@ -421,15 +421,21 @@ function initJSMD(dim) {
   //
 
   // Lennard-Jones potential for pair equilibrium distance re and well depth e
-  function forceLJ( rm_, e_ ) {
-    var e  = e_  !== undefined ? e_ : 10.0,
-        rm = rm_ !== undefined ? rm_ : 1.0,
-        rm6 = Math.pow(rm,6),
-        rm12 = rm6*rm6;
+  function forceLJ( sigma, epsilon ) {
+    sigma = sigma || 1.0,
+    epsilon  = epsilon  || 10.0,
+    var A = 12.0*4.0*epsilon*Math.pow(sigma,12.0),
+        B = 6.0*4.0*epsilon*Math.pow(sigma,6.0);
 
     return function(r) {
-      r /= 4;
-      return 12.0*e*( rm6*Math.pow(r,-7.0) - rm12*Math.pow(r,-13.0) );
+      return B*Math.pow(r,-7.0) - A*Math.pow(r,-13.0) );
+    }
+  }
+
+  // hard wall
+  function force12() {
+    return function(r) {
+      return -Math.pow(r,-13.0);
     }
   }
 
@@ -519,6 +525,18 @@ function initJSMD(dim) {
   function forceSpline( f1, f2, r1, r2 ) {
   }
 
+  // Lennard-Jones potential energy
+  function energyLJ( sigma, epsilon ) {
+    sigma = sigma || 1.0,
+    epsilon  = epsilon  || 10.0,
+    var A = 4.0*epsilon*Math.pow(sigma,12.0),
+        B = 4.0*epsilon*Math.pow(sigma,6.0);
+
+    return function(r) {
+      return  A*Math.pow(r,-12.0) ) - B*Math.pow(r,-6.0);
+    }
+  }
+
   // return ZBL energy (use with numerical diff)
   function energyZBL( Z1, Z2 ) {
     var a0 = 0.539177,
@@ -600,6 +618,7 @@ function initJSMD(dim) {
     },
     energy : {
       morse : energyMorse,
+      lennardJones : energyLJ,
       ZBL : energyZBL
     }
   };

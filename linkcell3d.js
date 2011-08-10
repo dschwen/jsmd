@@ -50,9 +50,9 @@ Linkcell3d.prototype.update = function() {
   // repopulate with all atoms
   var lx, ly,lz, i;
   for( i = 0; i < this.sim.atoms.length; ++i ) {
-    lx = Math.floor(this.sim.atoms[i].p.x/this.dx) % this.nx;
-    ly = Math.floor(this.sim.atoms[i].p.y/this.dy) % this.ny;
-    lz = Math.floor(this.sim.atoms[i].p.z/this.dz) % this.nz;
+    lx = Math.floor(this.sim.atoms[i].p.x/dx) % this.nx;
+    ly = Math.floor(this.sim.atoms[i].p.y/dy) % this.ny;
+    lz = Math.floor(this.sim.atoms[i].p.z/dz) % this.nz;
     this.data[lx][ly][lz].push(i);
   }
 }

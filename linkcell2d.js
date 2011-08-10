@@ -41,8 +41,8 @@ Linkcell2d.prototype.update = function() {
   // repopulate with all atoms
   var lx, ly, i;
   for( i = 0; i < this.sim.atoms.length; ++i ) {
-    lx = Math.floor(this.sim.atoms[i].p.x/this.dx) % this.nx;
-    ly = Math.floor(this.sim.atoms[i].p.y/this.dy) % this.ny;
+    lx = Math.floor(this.sim.atoms[i].p.x/dx) % this.nx;
+    ly = Math.floor(this.sim.atoms[i].p.y/dy) % this.ny;
     this.data[lx][ly].push(i);
   }
 }

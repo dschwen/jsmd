@@ -12,9 +12,6 @@ function Linkcell3d( sim ) {
   this.nx = Math.max( 3, Math.floor(sim.ss.x/rm) );
   this.ny = Math.max( 3, Math.floor(sim.ss.y/rm) );
   this.nz = Math.max( 3, Math.floor(sim.ss.z/rm) );
-  this.dx = sim.ss.x/this.nx;
-  this.dy = sim.ss.y/this.ny;
-  this.dz = sim.ss.z/this.nz;
 
   // build the 3D linkcell grid
   l = new Array(this.nx);
@@ -43,6 +40,13 @@ Linkcell3d.prototype.update = function() {
   // clear first
   this.clear();
 
+  // box size can be dynamic
+  var dx = sim.ss.x/this.nx,
+      dy = sim.ss.y/this.ny,
+      dz = sim.ss.z/this.nz;
+
+  // may need to test if box shrank too far!
+      
   // repopulate with all atoms
   var lx, ly,lz, i;
   for( i = 0; i < this.sim.atoms.length; ++i ) {

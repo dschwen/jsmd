@@ -11,8 +11,6 @@ function Linkcell2d( sim ) {
   // number and size of cells (have at least 3 cells in each direction)
   this.nx = Math.max( 3, Math.floor(sim.ss.x/rm) );
   this.ny = Math.max( 3, Math.floor(sim.ss.y/rm) );
-  this.dx = sim.ss.x/this.nx;
-  this.dy = sim.ss.y/this.ny;
 
   // build the 2D linkcell grid
   l = new Array(this.nx);
@@ -36,6 +34,10 @@ Linkcell2d.prototype.update = function() {
   // clear first
   this.clear();
 
+  // box size can be dynamic
+  var dx = sim.ss.x/this.nx,
+      dy = sim.ss.y/this.ny;
+      
   // repopulate with all atoms
   var lx, ly, i;
   for( i = 0; i < this.sim.atoms.length; ++i ) {

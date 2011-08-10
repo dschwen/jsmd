@@ -19,7 +19,10 @@
       <button onclick="cool()">Remove heat</button>
       <button onclick="addvac()">Add vacancy</button><br/>
       <input id="ramp" type="checkbox" onclick="ramp(this)"><label for="ramp">Auto ramp-up</label>
-      <input id="baro" type="checkbox" onclick="barostat(this)"><label for="baro">Activate barostat</label>
+      <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
+      <label for="baro">Activate barostat</label>
+      <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
+      <label for="therm">Activate thermostat</label>
       <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
       <div><i>T = <span id="showT"></span></i> energy units</div>
       <div><i>P = <span id="showP"></span></i> pressure units</div>
@@ -38,7 +41,7 @@
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
-          cchain = [], tab_tofq = [], tab_voft = [], tab_poft = [];
+          tab_tofq = [], tab_voft = [], tab_poft = [];
 
       t = new jsmd.AtomType();
       t.r = 0.25;
@@ -60,9 +63,9 @@
               p.z = (2*z+fcc[n][2])+0.5;
               a = new jsmd.Atom(p);
               a.p.wrap(sv);
-              a.v.x = 10.0*(Math.random()-0.5);
-              a.v.y = 10.0*(Math.random()-0.5);
-              a.v.z = 10.0*(Math.random()-0.5);
+              a.v.x = 0.5*(Math.random()-0.5);
+              a.v.y = 0.5*(Math.random()-0.5);
+              a.v.z = 0.5*(Math.random()-0.5);
               sim.atoms.push(a);
             }   
           }
@@ -70,11 +73,11 @@
       }
 
       //sim.setCutOff(4.0,0.5);
-      sim.setCutOff(7.0,0.5);
+      sim.setCutOff(3.5,0.5);
 
       // tabulate the morse potential with all default options
       //var force = jsmd.force.tabulated( jsmd.force.morse(1.28) );
-      var force = jsmd.force.tabulated( jsmd.force.lennardJones(0.3633, 1.0) );
+      var force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
@@ -86,18 +89,18 @@
       sim.renderChain = [ ];
 
       // w and w/o barostat
-      cchain[0] = [ 
-        jsmd.compute.verlet1, jsmd.compute.wrapUpdate,
-        jsmd.compute.forces,
-        jsmd.compute.verlet2,
+      var baropt = { P0: 0.0, tau: 10.0 },
+          barostat = jsmd.compute.berendsenP( baropt ),
+          thermopt = { T0: 0.5, tau: 0.1 },
+          thermostat = jsmd.compute.thermostat( thermopt );
+      sim.computeChain = [ 
+        jsmd.compute.verlet1,    // [0]
+        jsmd.compute.wrapUpdate, // [1]
+        jsmd.compute.forces,     // [2]
+        jsmd.compute.verlet2,    // [3]
+        null,                    // [4]
+        null                     // [5]
       ];
-      cchain[1] = [ 
-        jsmd.compute.verlet1, jsmd.compute.wrapUpdate,
-        jsmd.compute.forces,
-        jsmd.compute.verlet2,
-        jsmd.compute.berendsenP( 0, 10.0 ) 
-      ];
-      sim.computeChain = cchain[0];
 
       //sim.dt = 0.1;
       sim.pkapos = [];
@@ -134,20 +137,29 @@
 
       // add heat to the system
       function heat() {
-        var Q = 0.0;
-        /*for( i = 0; i < sim.atoms.length; i++ ) {
+        var Q = 0.0, tm = 0.0, cm = new jsmd.Vector();
+        for( i = 0; i < sim.atoms.length; i++ ) {
           a = sim.atoms[i];
           v2 = -a.v.len2();
-          a.v.x += 1.0*(Math.random()-0.5);
-          a.v.y += 1.0*(Math.random()-0.5);
-          a.v.z += 1.0*(Math.random()-0.5);
+          a.v.x += 0.5*(Math.random()-0.5);
+          a.v.y += 0.5*(Math.random()-0.5);
+          a.v.z += 0.5*(Math.random()-0.5);
           v2 += a.v.len2();
           Q += sim.types[a.t].m * v2;
-        }*/
+  
+          // obtain center of mass momentum
+          cm.add( jsmd.Vector.scale(a.v,sim.types[a.t].m) );
+          tm += sim.types[a.t].m;
+        }
+
+        // subtract center of mass momentum
+        cm.scale(1.0/tm);
+        for( i = 0; i < sim.atoms.length; i++ ) {
+          sim.atoms[i].v.sub(cm);
+        }
 
         // return average energy added per atom
-        //return 0.5 * Q/sim.atoms.length;
-        return 0.01;
+        return 0.5 * ( Q + tm*cm.len2() ) / sim.atoms.length;
       }
       // remove heat from the system
       function cool() {
@@ -171,13 +183,13 @@
         vup = box.checked;
       }
       // toggle barostat
-      function barostat(box) {
-        sim.computeChain = cchain[ box.checked ? 1 : 0 ];
+      function toggleBarostat(box) {
+        sim.computeChain[4] = box.checked ? barostat : null;
       }
       // remove random atom to create a vacancy
       function addvac () { 
         sim.atoms.splice( Math.floor( Math.random() * sim.atoms.length ), 1 );
-        sim.updateNeighborlist();
+        sim.nl.update();
       }
 
 

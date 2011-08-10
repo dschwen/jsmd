@@ -292,9 +292,9 @@ function initJSMD(dim) {
   }
 
   // Berendsen hydrostatic barostat factory function
-  function computeBerendsenP( P0, tau ) {
+  function computeBerendsenP( options ) {
     return function(store) {
-      var i, l = ( 1.0 - this.dt/tau * ( P0 - this.P ) );
+      var i, l = ( 1.0 - this.dt/options.tau * ( options.P0 - this.P ) );
 
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {
@@ -303,6 +303,21 @@ function initJSMD(dim) {
       
       // scale box
       this.ss.scale(l);
+    }
+  }
+
+  // simple scaling thermostat
+  function computeThermostat( options ) {
+    return function(store) {
+      var i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.T0 - this.T ) );
+
+      // scale atomic coordinates
+      for( i = 0; i < this.atoms.length; ++i ) {
+        this.atoms[i].v.scale(l);
+      }
+      
+      // new temperature
+      this.T *= l*l;
     }
   }
   
@@ -315,7 +330,9 @@ function initJSMD(dim) {
     for( i = 0; i < steps; ++i ) {
       // process compute chain
       for( j = 0; j < this.computeChain.length; ++j ) {
-        this.computeChain[j].call(this,store);
+        if( typeof(this.computeChain[j]) === 'function' ) {
+          this.computeChain[j].call(this,store);
+        }
       }
     }
     
@@ -422,13 +439,13 @@ function initJSMD(dim) {
 
   // Lennard-Jones potential for pair equilibrium distance re and well depth e
   function forceLJ( sigma, epsilon ) {
-    sigma = sigma || 1.0,
-    epsilon  = epsilon  || 10.0,
+    sigma = sigma || 1.0;
+    epsilon  = epsilon  || 1.0;
     var A = 12.0*4.0*epsilon*Math.pow(sigma,12.0),
         B = 6.0*4.0*epsilon*Math.pow(sigma,6.0);
 
     return function(r) {
-      return B*Math.pow(r,-7.0) - A*Math.pow(r,-13.0) );
+      return B*Math.pow(r,-7.0) - A*Math.pow(r,-13.0);
     }
   }
 
@@ -527,13 +544,13 @@ function initJSMD(dim) {
 
   // Lennard-Jones potential energy
   function energyLJ( sigma, epsilon ) {
-    sigma = sigma || 1.0,
-    epsilon  = epsilon  || 10.0,
+    sigma = sigma || 1.0;
+    epsilon  = epsilon  || 10.0;
     var A = 4.0*epsilon*Math.pow(sigma,12.0),
         B = 4.0*epsilon*Math.pow(sigma,6.0);
 
     return function(r) {
-      return  A*Math.pow(r,-12.0) ) - B*Math.pow(r,-6.0);
+      return  A*Math.pow(r,-12.0) - B*Math.pow(r,-6.0);
     }
   }
 
@@ -602,7 +619,8 @@ function initJSMD(dim) {
       verlet2 : computeVerlet2,
       bounce : computeBounce,
       wrapUpdate : computeWrapUpdate,
-      berendsenP: computeBerendsenP
+      berendsenP: computeBerendsenP,
+      thermostat: computeThermostat
     },
     render : {
       atoms : renderAtoms,

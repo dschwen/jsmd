@@ -60,6 +60,9 @@
               p.z = (2*z+fcc[n][2])+0.5;
               a = new jsmd.Atom(p);
               a.p.wrap(sv);
+              a.v.x = 10.0*(Math.random()-0.5);
+              a.v.y = 10.0*(Math.random()-0.5);
+              a.v.z = 10.0*(Math.random()-0.5);
               sim.atoms.push(a);
             }   
           }
@@ -132,17 +135,19 @@
       // add heat to the system
       function heat() {
         var Q = 0.0;
-        for( i = 0; i < sim.atoms.length; i++ ) {
+        /*for( i = 0; i < sim.atoms.length; i++ ) {
           a = sim.atoms[i];
           v2 = -a.v.len2();
-          a.v.x += 1.5*(Math.random()-0.5);
-          a.v.y += 1.5*(Math.random()-0.5);
+          a.v.x += 1.0*(Math.random()-0.5);
+          a.v.y += 1.0*(Math.random()-0.5);
+          a.v.z += 1.0*(Math.random()-0.5);
           v2 += a.v.len2();
           Q += sim.types[a.t].m * v2;
-        }
+        }*/
 
         // return average energy added per atom
-        return 0.5 * Q/sim.atoms.length;
+        //return 0.5 * Q/sim.atoms.length;
+        return 0.01;
       }
       // remove heat from the system
       function cool() {

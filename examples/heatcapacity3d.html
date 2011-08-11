@@ -13,31 +13,53 @@
     <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
     <style>
       div.box { border: 1px solid gray; margin: 0.2em; padding: 0.2em; }
+      div.green { background-color: #aaffaa }
+      div.blue { background-color: #aaaaff }
     </style>
   </head>
   <body>
     <div id="simcan" style="widthL 600px; height: 600px" style="float: left"></div>
     <div id="plot" style="width: 500px; height: 450px; float: right"></div>
     <div style="width: 500px">
-      <button onclick="heat()">Add heat</button>
-      <button onclick="cool()">Remove heat</button>
-      <button onclick="addvac()">Add vacancy</button><br/>
-      <input id="ramp" type="checkbox" onclick="ramp(this)"><label for="ramp">Auto ramp-up</label>
-      <div class="box">
+      <div class="box green">
+        <button onclick="heat()">Add heat</button>
+        <button onclick="cool()">Remove heat</button>
+        <button onclick="addvac()">Add vacancy</button><br/>
+      </div>
+
+      <div class="box green">
+        <input id="ramp" type="checkbox" onclick="ramp(this)">
+        <label for="ramp">Auto ramp-up</label><br/>
+        Plot <select id="plottype">
+          <option value="0">Temperatue vs. added heat T(Q)</option>
+          <option value="1">Heatcapacity vs. Temperature c(T)</option>
+          <option value="2">Volume vs. Temperature V(T)</option>
+          <option value="3">Presure vs. Temperature P(T)</option>
+        </select>
+      </div>
+
+      <div class="box green">
         <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
-        <label for="baro">Activate barostat</label>
-        <input type="number" value="10.0" onchange="baropt.P0=this.value"/>
-        <input type="number" value="100.0" onchange="baropt.tau=this.value"/>
+        <label for="baro">Activate barostat</label><br/>
+        P<sub>0</sub>=<input type="number" value="0.0" onchange="baropt.P0=this.value"/>
+        &tau;=<input type="number" value="100.0" onchange="baropt.tau=this.value"/>
       </div>
-      <div class="box">
+
+      <div class="box green">
         <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
-        <label for="therm">Activate thermostat</label>
-        <input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
-        <input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
+        <label for="therm">Activate thermostat</label><br/>
+        T<sub>0</sub>=<input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
+        &tau;=<input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
       </div>
-      <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
-      <div><i>T = <span id="showT"></span></i> energy units</div>
-      <div><i>P = <span id="showP"></span></i> pressure units</div>
+
+      <div class="box green">
+        <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
+      </div>
+
+      <div class="box blue">
+        <div><i>T = <span id="showT"></span></i> energy units</div>
+        <div><i>P = <span id="showP"></span></i> pressure units</div>
+      </div>
     </div>
     <div style="width: 50%; float: left; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
     <script type="text/javascript">
@@ -53,7 +75,7 @@
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
-          tab_tofq = [], tab_voft = [], tab_poft = [];
+          tabs = [ [],[],[],[],[] ];
 
       t = new jsmd.AtomType();
       t.r = 0.25;
@@ -101,7 +123,7 @@
       sim.renderChain = [ ];
 
       // w and w/o barostat
-      var baropt = { P0: 0.0, tau: 10.0 },
+      var baropt = { P0: 0.0, tau: 100.0 },
           barostat = jsmd.compute.berendsenP( baropt ),
           thermopt = { T0: 0.5, tau: 0.1 },
           thermostat = jsmd.compute.thermostat( thermopt );
@@ -117,7 +139,7 @@
       //sim.dt = 0.1;
       sim.pkapos = [];
       setInterval( function() {
-        var it;
+        var it, l;
       
         for( it = 0; ( !vup && it < 20 ) || ( vup && it == 0 ); ++it ) {
           sim.run(2);
@@ -134,10 +156,18 @@
             rcount++;
             if( rup && rcount > 20 ) {
               log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
-              tab_tofq.push([Q,T]);
-              tab_poft.push([T,P]);
-              tab_voft.push([T,sim.ss.vol()]);
-              $.plot( $('#plot'), [ { data: tab_voft, color : 'rgb(200,0,0)', label : 'T(Q)' } ] );
+              l = tabs[0].length;
+              if( l > 0 ) {
+                tabs[1].push([T,(Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) ]);
+              }
+              tabs[0].push([Q,T]);
+              tabs[2].push([T,sim.ss.vol()]);
+              tabs[3].push([T,P]);
+              $.plot( $('#plot'), [ { 
+                data: tabs[$('#plottype option:selected').val()], 
+                color : 'rgb(200,0,0)', 
+                label : $('#plottype option:selected').text() 
+              } ] );
               rcount = 0;
               Q += heat();
             }

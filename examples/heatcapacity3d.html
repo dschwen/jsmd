@@ -11,39 +11,98 @@
     <script type="text/javascript" src="../lib/Three.js"></script>
     <script type="text/javascript" src="../lib/jquery.pack.js"></script>
     <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
+    <script src="../lib/MathJax/MathJax.js">
+      MathJax.Hub.Config({
+        extensions: ["tex2jax.js","TeX/bbox.js"],
+        imageFont: null,
+        //menuSettings: { zoom: 'Hover' },
+        jax: ["input/TeX","output/HTML-CSS"],
+        tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+      });
+    </script>
     <style>
       div.box { border: 1px solid gray; margin: 0.2em; padding: 0.2em; }
+      #step1,#step2,#step3 {
+        border: 1px dotted blue;
+        background-color: #eeeeee;
+        padding: 0.5em;
+      }
+      h1 { font-family: sans; }
+      #step2 { display: none }
+      #step3 { display: none }
+  
+      .radiooff, .radiooff p { color: gray; }
+      div.radioon { border: 1px solid black }
     </style>
   </head>
   <body>
-    <div id="simcan" style="widthL 600px; height: 600px" style="float: left"></div>
-    <div id="plot" style="width: 500px; height: 450px; float: right"></div>
-    <div style="width: 500px">
-      <button onclick="heat()">Add heat</button>
-      <button onclick="cool()">Remove heat</button>
-      <button onclick="addvac()">Add vacancy</button><br/>
-      <input id="ramp" type="checkbox" onclick="ramp(this)"><label for="ramp">Auto ramp-up</label>
-      <div class="box">
-        <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
-        <label for="baro">Activate barostat</label>
-        <input type="number" value="10.0" onchange="baropt.P0=this.value"/>
-        <input type="number" value="100.0" onchange="baropt.tau=this.value"/>
+    <!-- Step 1: choose system geometry -->
+    <div id="step1">
+      <h1>Sample geometry</h1>
+      <p>Select a sample geometry from the list below.</p>
+      <select id='geometry'>
+        <option value="0">fcc crystal</option>
+        <option value="0">nano particle</option>
+        <option value="0">gas</option>
+      </select>
+      <button onclick="gostep(1,2)">Next</button>
+    </div>               
+
+    <!-- Step 1: choose interaction potential -->
+    <div id="step2">
+      <h1>Atomic interactions</h1>
+      <p>Select an interaction potential and its parameters.</p>
+      <div class="box radioon">
+        <input type="radio" name="potential" onchange="updateRadios('#step2')" checked/> 
+        <b>No interaction</b> (ideal gas)</br>
       </div>
-      <div class="box">
-        <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
-        <label for="therm">Activate thermostat</label>
-        <input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
-        <input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
+      <div class="box radiooff">
+        <input type="radio" name="potential" onchange="updateRadios('#step2')"/>
+        <b>Lennard Jones</b> pair potential</br>
+        <p>\[ 
+            V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
+        \]</p>
+        $\varepsilon=$ <input type="number" value="1.0" id="ljepsilon"/> (binding energy)<br/>
+        $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
+        $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
       </div>
-      <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
-      <div><i>T = <span id="showT"></span></i> energy units</div>
-      <div><i>P = <span id="showP"></span></i> pressure units</div>
+      <button onclick="gostep(2,1)">Back</button>
+      <button onclick="gostep(2,3)">Next</button>
     </div>
-    <div style="width: 50%; float: left; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
+
+    <!-- Step 3: run stuff -->
+    <div id="step3">
+      <h1>Simulation</h1>
+      <div id="simcan" style="widthL 600px; height: 600px" style="float: left"></div>
+      <div id="plot" style="width: 500px; height: 450px; float: right"></div>
+      <div style="width: 500px">
+        <button onclick="heat()">Add heat</button>
+        <button onclick="cool()">Remove heat</button>
+        <button onclick="addvac()">Add vacancy</button><br/>
+        <input id="ramp" type="checkbox" onclick="ramp(this)"><label for="ramp">Auto ramp-up</label>
+        <div class="box">
+          <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
+          <label for="baro">Activate barostat</label>
+          <input type="number" value="10.0" onchange="baropt.P0=this.value"/>
+          <input type="number" value="100.0" onchange="baropt.tau=this.value"/>
+        </div>
+        <div class="box">
+          <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
+          <label for="therm">Activate thermostat</label>
+          <input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
+          <input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
+        </div>
+        <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
+        <div><i>T = <span id="showT"></span></i> energy units</div>
+        <div><i>P = <span id="showP"></span></i> pressure units</div>
+      </div>
+      <div style="width: 50%; float: left; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
+      <button onclick="gostep(3,2)">Back</button>
+    </div>
+
     <script type="text/javascript">
 
       var jsmd = initJSMD(3),
-          sin60 = Math.sin(Math.PI/3.0),
           ss = 10, sv = new jsmd.Vector(ss,ss,ss),
           sc = $('#simcan'),
           sim = new jsmd.Simulation(sv),
@@ -54,6 +113,27 @@
           showT = $('#showT'),
           showP = $('#showP'),
           tab_tofq = [], tab_voft = [], tab_poft = [];
+
+      function updateRadios(sel) {
+        $(sel).find('.radioon').addClass('radiooff').removeClass('radioon');
+        $(sel).find('.radiooff').has('input:radio:checked').addClass('radioon').removeClass('radiooff');
+      }
+
+      function gostep(n1,n2) {
+        $('#step'+n1).hide(400);
+        switch( n1 ) {
+          case 1: 
+            geo = 0;
+            // construct simulation object 
+            break;
+          case 2:
+            // set interaction matrix and compute chain
+            break;
+          case 3:
+            // initialize render3d (container must not be hidden!)
+        }
+        $('#step'+n2).show(400);
+      }
 
       t = new jsmd.AtomType();
       t.r = 0.25;

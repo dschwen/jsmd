@@ -42,12 +42,40 @@
     <!-- Step 1: choose system geometry -->
     <div id="step1">
       <h1>Sample geometry</h1>
-      <p>Select a sample geometry from the list below.</p>
-      <select id='geometry'>
-        <option value="0">fcc crystal</option>
-        <option value="0">nano particle</option>
-        <option value="0">gas</option>
-      </select>
+      <p>Select a sample geometry and boundary conditions.</p>
+      <div style="width: 45%; float: left">
+      	<div class="box radioon">
+          <input type="radio" name="sample" onchange="updateRadios('#step1')" checked id="sam_fcc"/> 
+          <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
+          $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )
+      	</div>
+      	<div class="box radiooff">
+          <input type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_nano"/> 
+          <label for="sam_nano"><b>Nano particle</b></label></br>
+          $r=$ <input type="number" value="3" id="npradius"/> (radius)
+      	</div>
+      	<div class="box radiooff">
+          <input type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_gas"/> 
+          <label for="sam_gas"><b>Gas</b></label></br>
+          $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
+          $T=$ <input type="number" value="1.0" id="sgtemp"/> (temperature)<br/>
+      	</div>
+      </div>
+      <div style="width: 45%; float: right">
+      	<div class="box radioon">
+          <input type="radio" name="boundary" onchange="updateRadios('#step1')" checked id="bc_period"/> 
+          <label for="bc_period"><b>Periodic boundaries</b></label></br>
+          <canvas id="bc_can_period" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
+	  <br style="clear: both"/>
+      	</div>
+      	<div class="box radiooff">
+          <input type="radio" name="boundary" onchange="updateRadios('#step1')" id="bc_reflect"/> 
+          <label for="bc_reflect"><b>Reflecting boundaries</b></label></br>
+          <canvas id="bc_can_reflect" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
+	  <br style="clear: both"/>
+      	</div>
+      </div>
+      <br style="clear: both"/>
       <button onclick="gostep(1,2)">Next</button>
     </div>               
 
@@ -56,12 +84,12 @@
       <h1>Atomic interactions</h1>
       <p>Select an interaction potential and its parameters.</p>
       <div class="box radioon">
-        <input type="radio" name="potential" onchange="updateRadios('#step2')" checked/> 
-        <b>No interaction</b> (ideal gas)</br>
+        <input type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
+        <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
       </div>
       <div class="box radiooff">
-        <input type="radio" name="potential" onchange="updateRadios('#step2')"/>
-        <b>Lennard Jones</b> pair potential</br>
+        <input type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
+        <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
         <p>\[ 
             V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
         \]</p>
@@ -136,6 +164,16 @@
           showT = $('#showT'),
           showP = $('#showP'),
           tabs = [ [],[],[],[],[] ];
+
+      var bcvis = (function(){
+        var c1 = $('#bc_can_period')[0].getContext('2d'), 
+	    c2 = $('#bc_can_reflect')[0].getContext('2d'),
+	    x1 = 20, y1 = 20, x2 = handler;
+        function step() {
+	  handler = setTimeout( step, 20 );
+	}
+      })();
+      $(bcvis.start);
 
       function updateRadios(sel) {
         $(sel).find('.radioon').addClass('radiooff').removeClass('radioon');

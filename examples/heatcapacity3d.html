@@ -34,8 +34,9 @@
       #step2 { display: none }
       #step3 { display: none }
   
-      .radiooff, .radiooff p { color: gray; }
+      /*.radiooff, .radiooff p { color: gray; }*/
       div.radioon { border: 1px solid black }
+      .radiooff { opacity: 0.35 }
     </style>
   </head>
   <body>
@@ -168,10 +169,56 @@
       var bcvis = (function(){
         var c1 = $('#bc_can_period')[0].getContext('2d'), 
 	    c2 = $('#bc_can_reflect')[0].getContext('2d'),
-	    x1 = 20, y1 = 20, x2 = handler;
+	    x1 = 20, y1 = 20, x2 = 20, y2 = 20,
+            vx1 = 1.5, vy1 = 0.87, vx2= 1.5, vy2 = 0.87, r = 10.0, handler;
+
+
+        function drawAtom(c,x,y) {
+          c.beginPath();
+          c.arc( x, y, r, 0, Math.PI*2.0, true);
+          c.closePath();
+          c.fill();
+        }
         function step() {
+          var i,j;
+
+          // periodic
+          c1.fillStyle = "rgba(255,255,255,1)";
+          c1.fillRect(0, 0, 50, 50 );
+          c1.fillStyle = "rgba(200,0,0,1)";
+          for( i = -1; i <=1; ++i ) {
+            for( j = -1; j <=1; ++j ) {
+              drawAtom(c1,x1+50*i,y1+50*j);
+            }
+          }
+          x1 = ( x1+vx1) % 50;
+          y1 = ( y1+vy1) % 50;
+
+          // reflecting
+          c2.fillStyle = "rgba(255,255,255,1)";
+          c2.fillRect(0, 0, 50, 50 );
+          c2.fillStyle = "rgba(200,0,0,1)";
+          drawAtom(c2,x2,y2);
+          x2 += vx2;
+          y2 += vy2;
+          if( x2 < r ) {
+            vx2 = -vx2;
+            x2 = 2*r-x2;
+          } else if( x2 > 50-r ) {
+            vx2 = -vx2;
+            x2 = 2*(50-r)-x2;
+          }
+          if( y2 < r ) {
+            vy2 = -vy2;
+            y2 = 2*r-y2;
+          } else if( y2 > 50-r ) {
+            vy2 = -vy2;
+            y2 = 2*(50-r)-y2;
+          }
+
 	  handler = setTimeout( step, 20 );
 	}
+        return { start: step, stop: function() { clearTimeout(handler); } }
       })();
       $(bcvis.start);
 
@@ -185,6 +232,7 @@
         switch( n1 ) {
           case 1: 
             geo = 0;
+            bcvis.stop();
             // construct simulation object 
             break;
           case 2:
@@ -192,6 +240,11 @@
             break;
           case 3:
             // initialize render3d (container must not be hidden!)
+        }
+        switch( n2 ) {
+          case 1:
+            bcvis.start();
+            break;
         }
         $('#step'+n2).show(400);
       }
@@ -257,6 +310,7 @@
 
       //sim.dt = 0.1;
       sim.pkapos = [];
+/*
       setInterval( function() {
         var it, l;
       
@@ -295,7 +349,7 @@
           }
         }
       }, 1000/50 );
-
+*/
       // add heat to the system
       function heat() {
         var Q = 0.0, tm = 0.0, cm = new jsmd.Vector();

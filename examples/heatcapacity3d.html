@@ -64,13 +64,13 @@
       </div>
       <div style="width: 45%; float: right">
       	<div class="box radioon">
-          <input type="radio" name="boundary" onchange="updateRadios('#step1')" checked id="bc_period"/> 
+          <input value="period" type="radio" name="boundary" onchange="updateRadios('#step1')" checked id="bc_period"/> 
           <label for="bc_period"><b>Periodic boundaries</b></label></br>
           <canvas id="bc_can_period" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
 	  <br style="clear: both"/>
       	</div>
       	<div class="box radiooff">
-          <input type="radio" name="boundary" onchange="updateRadios('#step1')" id="bc_reflect"/> 
+          <input value="reflect" type="radio" name="boundary" onchange="updateRadios('#step1')" id="bc_reflect"/> 
           <label for="bc_reflect"><b>Reflecting boundaries</b></label></br>
           <canvas id="bc_can_reflect" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
 	  <br style="clear: both"/>
@@ -85,11 +85,11 @@
       <h1>Atomic interactions</h1>
       <p>Select an interaction potential and its parameters.</p>
       <div class="box radioon">
-        <input type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
+        <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
         <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
       </div>
       <div class="box radiooff">
-        <input type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
+        <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
         <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
         <p>\[ 
             V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
@@ -210,8 +210,8 @@
             sim.computeChain = [ 
               jsmd.compute.verlet1,    // [0]
               // PBC or reflect
-              false ? jsmd.compute.wrapUpdate : computeMovingWall, // [1]
-              jsmd.compute.forces,     // [2]
+              ($('input:radio[name=boundary]:checked').val() == 'period') ? jsmd.compute.wrapUpdate : computeMovingWall, // [1]
+              null               ,     // [2] computeForces
               jsmd.compute.verlet2,    // [3]
               null,                    // [4]
               null                     // [5]
@@ -220,15 +220,25 @@
             bcvis.stop();
             break;
           case 2:
+            switch( $('input:radio[name=potential]:checked').val() ) {
+              case 'none' : 
+                // set cut-off
+                sim.computeChain[2] = null;
+                sim.setCutOff(8,0.5);
+                break;
 
-            // tabulate the potential with all default options
-            force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
+              case 'lj' : 
+                // tabulate the potential with all default options
+                force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
 
-            // set interaction matrix (1x1)
-            sim.setInteraction( [0,0], force );
+                // set interaction matrix (1x1)
+                sim.computeChain[2] = jsmd.compute.forces;
+                sim.setInteraction( [0,0], force );
 
-            // set cut-off
-            sim.setCutOff(3.5,0.5);
+                // set cut-off
+                sim.setCutOff(3.5,0.5);
+                break;
+            }
             sim.nl.update();
 
             // misc

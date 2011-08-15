@@ -46,17 +46,17 @@
       <p>Select a sample geometry and boundary conditions.</p>
       <div style="width: 45%; float: left">
       	<div class="box radioon">
-          <input type="radio" name="sample" onchange="updateRadios('#step1')" checked id="sam_fcc"/> 
+          <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step1')" checked id="sam_fcc"/> 
           <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
           $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )
       	</div>
       	<div class="box radiooff">
-          <input type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_nano"/> 
+          <input value="nano" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_nano"/> 
           <label for="sam_nano"><b>Nano particle</b></label></br>
           $r=$ <input type="number" value="3" id="npradius"/> (radius)
       	</div>
       	<div class="box radiooff">
-          <input type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_gas"/> 
+          <input value="gas" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_gas"/> 
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="1.0" id="sgtemp"/> (temperature)<br/>
@@ -155,91 +155,89 @@
     <script type="text/javascript">
 
       var jsmd = initJSMD(3),
-          ss = 10, sv = new jsmd.Vector(ss,ss,ss),
+          ss, sv,
           sc = $('#simcan'),
-          sim = new jsmd.Simulation(sv),
+          sim, force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           T = 0.0, P = 0.0, Q = 0.0,
           count = 0, rcount = 0, rup = false, vup = true,
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
+          render3d,
           tabs = [ [],[],[],[],[] ];
-
-      var bcvis = (function(){
-        var c1 = $('#bc_can_period')[0].getContext('2d'), 
-	    c2 = $('#bc_can_reflect')[0].getContext('2d'),
-	    x1 = 20, y1 = 20, x2 = 20, y2 = 20,
-            vx1 = 1.5, vy1 = 0.87, vx2= 1.5, vy2 = 0.87, r = 10.0, handler;
-
-
-        function drawAtom(c,x,y) {
-          c.beginPath();
-          c.arc( x, y, r, 0, Math.PI*2.0, true);
-          c.closePath();
-          c.fill();
-        }
-        function step() {
-          var i,j;
-
-          // periodic
-          c1.fillStyle = "rgba(255,255,255,1)";
-          c1.fillRect(0, 0, 50, 50 );
-          c1.fillStyle = "rgba(200,0,0,1)";
-          for( i = -1; i <=1; ++i ) {
-            for( j = -1; j <=1; ++j ) {
-              drawAtom(c1,x1+50*i,y1+50*j);
-            }
-          }
-          x1 = ( x1+vx1) % 50;
-          y1 = ( y1+vy1) % 50;
-
-          // reflecting
-          c2.fillStyle = "rgba(255,255,255,1)";
-          c2.fillRect(0, 0, 50, 50 );
-          c2.fillStyle = "rgba(200,0,0,1)";
-          drawAtom(c2,x2,y2);
-          x2 += vx2;
-          y2 += vy2;
-          if( x2 < r ) {
-            vx2 = -vx2;
-            x2 = 2*r-x2;
-          } else if( x2 > 50-r ) {
-            vx2 = -vx2;
-            x2 = 2*(50-r)-x2;
-          }
-          if( y2 < r ) {
-            vy2 = -vy2;
-            y2 = 2*r-y2;
-          } else if( y2 > 50-r ) {
-            vy2 = -vy2;
-            y2 = 2*(50-r)-y2;
-          }
-
-	  handler = setTimeout( step, 20 );
-	}
-        return { start: step, stop: function() { clearTimeout(handler); } }
-      })();
-      $(bcvis.start);
-
-      function updateRadios(sel) {
-        $(sel).find('.radioon').addClass('radiooff').removeClass('radioon');
-        $(sel).find('.radiooff').has('input:radio:checked').addClass('radioon').removeClass('radiooff');
-      }
 
       function gostep(n1,n2) {
         $('#step'+n1).hide(400);
         switch( n1 ) {
           case 1: 
-            geo = 0;
-            bcvis.stop();
             // construct simulation object 
+            switch( $('input:radio[name=sample]:checked').val() ) {
+              case 'fcc' : 
+                ss = 10; sv = new jsmd.Vector(ss,ss,ss);
+                sim = new jsmd.Simulation(sv);
+
+                // insert atoms
+                var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
+                for( x = 0; x < ss/2; ++x ) {
+                  for( y = 0; y < ss/2; ++y ) {
+                    for( z = 0; z < ss/2; ++z ) {
+                      for( n = 0; n < 4; ++n ) {
+                        p.x = (2*x+fcc[n][0])+0.5;
+                        p.y = (2*y+fcc[n][1])+0.5;
+                        p.z = (2*z+fcc[n][2])+0.5;
+                        a = new jsmd.Atom(p);
+                        a.p.wrap(sv);
+                        a.v.x = 0.5*(Math.random()-0.5);
+                        a.v.y = 0.5*(Math.random()-0.5);
+                        a.v.z = 0.5*(Math.random()-0.5);
+                        sim.atoms.push(a);
+                      }   
+                    }
+                  }
+                }
+                break;
+              case 'nano' :
+                break;
+              case 'gas' :
+                break;
+            }
+            t = new jsmd.AtomType();
+            t.r = 0.25;
+            sim.types.push(t);
+
+            // set compute chain
+            sim.computeChain = [ 
+              jsmd.compute.verlet1,    // [0]
+              // PBC or reflect
+              false ? jsmd.compute.wrapUpdate : computeMovingWall, // [1]
+              jsmd.compute.forces,     // [2]
+              jsmd.compute.verlet2,    // [3]
+              null,                    // [4]
+              null                     // [5]
+            ];
+
+            bcvis.stop();
             break;
           case 2:
-            // set interaction matrix and compute chain
+
+            // tabulate the potential with all default options
+            force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
+
+            // set interaction matrix (1x1)
+            sim.setInteraction( [0,0], force );
+
+            // set cut-off
+            sim.setCutOff(3.5,0.5);
+            sim.nl.update();
+
+            // misc
+            sim.drag = 1.0;
+            sim.renderChain = [ ];
             break;
           case 3:
             // initialize render3d (container must not be hidden!)
+            render3d = initRender3D( sim, document.getElementById('simcan') );
         }
         switch( n2 ) {
           case 1:
@@ -249,67 +247,13 @@
         $('#step'+n2).show(400);
       }
 
-      t = new jsmd.AtomType();
-      t.r = 0.25;
-      sim.types.push(t);
-      t = new jsmd.AtomType();
-      t.r = 0.25;
-      t.m = 1;
-      t.color = 'rgb(0,200,0)';
-      sim.types.push(t);
-
-      // insert atoms
-      var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
-      for( x = 0; x < ss/2; ++x ) {
-        for( y = 0; y < ss/2; ++y ) {
-          for( z = 0; z < ss/2; ++z ) {
-            for( n = 0; n < 4; ++n ) {
-              p.x = (2*x+fcc[n][0])+0.5;
-              p.y = (2*y+fcc[n][1])+0.5;
-              p.z = (2*z+fcc[n][2])+0.5;
-              a = new jsmd.Atom(p);
-              a.p.wrap(sv);
-              a.v.x = 0.5*(Math.random()-0.5);
-              a.v.y = 0.5*(Math.random()-0.5);
-              a.v.z = 0.5*(Math.random()-0.5);
-              sim.atoms.push(a);
-            }   
-          }
-        }
-      }
-
-      //sim.setCutOff(4.0,0.5);
-      sim.setCutOff(3.5,0.5);
-
-      // tabulate the morse potential with all default options
-      //var force = jsmd.force.tabulated( jsmd.force.morse(1.28) );
-      var force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
-
-      sim.setInteraction( [0,0], force );
-      sim.setInteraction( [1,0], force );
-      sim.setInteraction( [1,1], force );
-      sim.nl.update();
-      sim.drag = 1.0;
-
-      var render3d = initRender3D( sim, document.getElementById('simcan') );
-      sim.renderChain = [ ];
 
       // w and w/o barostat
       var baropt = { P0: 0.0, tau: 100.0 },
           barostat = jsmd.compute.berendsenP( baropt ),
           thermopt = { T0: 0.5, tau: 0.1 },
           thermostat = jsmd.compute.thermostat( thermopt );
-      sim.computeChain = [ 
-        jsmd.compute.verlet1,    // [0]
-        jsmd.compute.wrapUpdate, // [1]
-        jsmd.compute.forces,     // [2]
-        jsmd.compute.verlet2,    // [3]
-        null,                    // [4]
-        null                     // [5]
-      ];
 
-      //sim.dt = 0.1;
-      sim.pkapos = [];
 /*
       setInterval( function() {
         var it, l;
@@ -405,6 +349,114 @@
       function addvac () { 
         sim.atoms.splice( Math.floor( Math.random() * sim.atoms.length ), 1 );
         sim.nl.update();
+      }
+
+      // moving walls (modified from computeBounce))
+      var mwU = 0.0, mwdss = new jsmd.Vector();
+      function computeMovingWall(store) {
+        var i, p, v, v2 = null, mwss = jsmd.Vector.scale(mwdss,this.dt);
+
+        // move walls (subtract twice since both opposing walls are moving in!)
+        this.ss.sub(mwss);
+        this.ss.sub(mwss);
+
+        for( i = 0; i < this.atoms.length; ++i ) {
+          p = this.atoms[i].p;
+          p.sub(mwss);
+          v = this.atoms[i].v;
+          if( p.x < 0 ) {
+            p.x = -p.x; v.x = -v.x;
+            if( v2 === null ) { v2 = v.len2(); }
+            v.x += 2.0 * mwdss.x;
+          } else if ( p.x > this.ss.x ) {
+            p.x = 2.0*this.ss.x - p.x; v.x = -v.x;
+            if( v2 === null ) { v2 = v.len2(); }
+            v.x -= 2.0 * mwdss.x;
+          }
+          if( p.y < 0 ) {
+            p.y = -p.y; v.y = -v.y;
+            if( v2 === null ) { v2 = v.len2(); }
+            v.y += 2.0 * mwdss.y;
+          } else if ( p.y > this.ss.y ) {
+            p.y = 2.0*this.ss.y - p.y; v.y = -v.y;
+            if( v2 === null ) { v2 = v.len2(); }
+            v.y -= 2.0 * mwdss.y;
+          }
+          if( p.z < 0 ) {
+            p.z = -p.z; v.z = -v.z;
+            if( v2 === null ) { v2 = v.len2(); }
+            v.z += 2.0 * mwdss.z;
+          } else if ( p.z > this.ss.z ) {
+            p.z = 2.0*this.ss.z - p.z; v.z = -v.z;
+            if( v2 === null ) { v2 = v.len2(); }
+            v.z -= 2.0 * mwdss.z;
+          }
+          // tally work done on the system
+          if( v2 !== null ) { 
+            mwU += 0.5 * sim.types[this.atoms[i].t].m * (v.len2()-v2); 
+          }
+        }
+      }
+
+      // code for the two boundary condition animations in step1
+      var bcvis = (function(){
+        var c1 = $('#bc_can_period')[0].getContext('2d'), 
+            c2 = $('#bc_can_reflect')[0].getContext('2d'),
+            x1 = 20, y1 = 20, x2 = 20, y2 = 20,
+            vx1 = 1.5, vy1 = 0.87, vx2= 1.5, vy2 = 0.87, r = 10.0, handler;
+
+        function drawAtom(c,x,y) {
+          c.beginPath();
+          c.arc( x, y, r, 0, Math.PI*2.0, true);
+          c.closePath();
+          c.fill();
+        }
+        function step() {
+          var i,j;
+
+          // periodic
+          c1.fillStyle = "rgba(255,255,255,1)";
+          c1.fillRect(0, 0, 50, 50 );
+          c1.fillStyle = "rgba(200,0,0,1)";
+          for( i = -1; i <=1; ++i ) {
+            for( j = -1; j <=1; ++j ) {
+              drawAtom(c1,x1+50*i,y1+50*j);
+            }
+          }
+          x1 = ( x1+vx1) % 50;
+          y1 = ( y1+vy1) % 50;
+
+          // reflecting
+          c2.fillStyle = "rgba(255,255,255,1)";
+          c2.fillRect(0, 0, 50, 50 );
+          c2.fillStyle = "rgba(200,0,0,1)";
+          drawAtom(c2,x2,y2);
+          x2 += vx2;
+          y2 += vy2;
+          if( x2 < r ) {
+            vx2 = -vx2;
+            x2 = 2*r-x2;
+          } else if( x2 > 50-r ) {
+            vx2 = -vx2;
+            x2 = 2*(50-r)-x2;
+          }
+          if( y2 < r ) {
+            vy2 = -vy2;
+            y2 = 2*r-y2;
+          } else if( y2 > 50-r ) {
+            vy2 = -vy2;
+            y2 = 2*(50-r)-y2;
+          }
+
+          handler = setTimeout( step, 20 );
+        }
+        return { start: step, stop: function() { clearTimeout(handler); } }
+      })();
+      $(bcvis.start);
+
+      function updateRadios(sel) {
+        $(sel).find('.radioon').addClass('radiooff').removeClass('radioon');
+        $(sel).find('.radiooff').has('input:radio:checked').addClass('radioon').removeClass('radiooff');
       }
 
 

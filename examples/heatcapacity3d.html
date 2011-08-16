@@ -139,16 +139,17 @@
           &tau;=<input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
         </div>
 
-        <div class="box green">
+        <!--<div class="box green">
           <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
-        </div>
+        </div>-->
 
         <div class="box blue">
           <div><i>T = <span id="showT"></span></i> energy units</div>
           <div><i>P = <span id="showP"></span></i> pressure units</div>
         </div>
       </div>
-      <div style="width: 50%; float: left; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
+
+      <div style="width: 50%; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
       <button onclick="gostep(3,2)">Back</button>
     </div>
 
@@ -159,16 +160,16 @@
           sc = $('#simcan'),
           sim, force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
-          T = 0.0, P = 0.0, Q = 0.0,
-          count = 0, rcount = 0, rup = false, vup = true,
+          T = 0.0, P = 0.0, Q = 0.0, rup = false,
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
-          render3d, stopAnim,
+          render3d, stopAnim, stopCompute, compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
           tabs = [ [],[],[],[],[] ];
 
       function gostep(n1,n2) {
+        var x,y,z,n;
         $('#step'+n1).hide(400);
         switch( n1 ) {
           case 1: 
@@ -206,6 +207,35 @@
                 sim = new jsmd.Simulation(sv);
                 break;
               case 'gas' :
+                var num = $('#sgnum').val(),
+                    temp = $('#sgtemp').val(),
+                    i,w,x1,x2,gr=[];
+                ss = 40;
+                sv = new jsmd.Vector(ss,ss,ss);
+                sim = new jsmd.Simulation(sv);
+                for( n = 0; n < num; ++n ) {
+                  // fill gaussian random number reservoir
+                  if( n%2 == 0 ) {
+                    for( i = 0; i<3; ++i ) {
+                      do {
+                              x1 = 2.0 * Math.random() - 1.0;
+                              x2 = 2.0 * Math.random() - 1.0;
+                              w = x1 * x1 + x2 * x2;
+                      } while ( w >= 1.0 );
+
+                      w = Math.sqrt( temp * (-2.0 * Math.log( w ) ) / w );
+                      gr[2*i] = x1 * w;
+                      gr[2*i+1] = x2 * w;
+                    }
+                  }
+                     
+                  // create atom at random position, with gaussian velocity distribution
+                  a = new jsmd.Atom( jsmd.Vector.random(sv) );
+                  a.v.x = gr[(n%2)*3];
+                  a.v.y = gr[(n%2)*3+1];
+                  a.v.z = gr[(n%2)*3+2];
+                  sim.atoms.push(a);
+                }
                 break;
             }
             t = new jsmd.AtomType();
@@ -216,7 +246,7 @@
             sim.computeChain = [ 
               jsmd.compute.verlet1,    // [0]
               // PBC or reflect
-              ($('input:radio[name=boundary]:checked').val() == 'period') ? jsmd.compute.wrapUpdate : computeMovingWall, // [1]
+              ($('input:radio[name=boundary]:checked').val() == 'period') ? jsmd.compute.wrap : computeMovingWall, // [1]
               null               ,     // [2] computeForces
               jsmd.compute.verlet2,    // [3]
               null,                    // [4]
@@ -262,6 +292,7 @@
             break;
           case 3:
             stopAnim();
+            stopCompute();
             break;
         }
         switch( n2 ) {
@@ -270,6 +301,7 @@
             break;
           case 3: 
             stopAnim = startAnim();
+            stopCompute = startCompute();
             break;
         }
         $('#step'+n2).show(400);
@@ -305,46 +337,50 @@
           }
         }
       }
-/*
-      setInterval( function() {
-        var it, l;
-      
-        for( it = 0; ( !vup && it < 20 ) || ( vup && it == 0 ); ++it ) {
-          sim.run(2);
-          if( vup ) { render3d(); }
-          count++;
-          P += sim.P;
-          T += sim.T;
-          if( count > 10 ) {
-            P = Math.round(10000*P/count)/10000;
-            T = Math.round(10000*T/count)/10000;
-            showP.text(P);
-            showT.text(T);
-            count = 0;
-            rcount++;
-            if( rup && rcount > 20 ) {
-              log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
-              l = tabs[0].length;
-              if( l > 0 ) {
-                tabs[1].push([T,(Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) ]);
+
+      function startCompute() {
+        var handler, count = 0, rcount = 0;
+
+        setInterval( function() {
+          var it, l;
+        
+          for( it = 0; it < compOpt.loopSteps; ++it ) {
+            sim.run(2);
+            count++;
+            P += sim.P;
+            T += sim.T;
+            if( count > compOpt.samples ) {
+              P = Math.round(10000*P/count)/10000;
+              T = Math.round(10000*T/count)/10000;
+              showP.text(P);
+              showT.text(T);
+              count = 0;
+              rcount++;
+              if( rup && rcount > compOpt.equilibrate ) {
+                log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
+                l = tabs[0].length;
+                if( l > 0 ) {
+                  tabs[1].push([T,(Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) ]);
+                }
+                tabs[0].push([Q,T]);
+                tabs[2].push([T,sim.ss.vol()]);
+                tabs[3].push([T,P]);
+                $.plot( $('#plot'), [ { 
+                  data: tabs[$('#plottype option:selected').val()], 
+                  color : 'rgb(200,0,0)', 
+                  label : $('#plottype option:selected').text() 
+                } ] );
+                rcount = 0;
+                Q += heat();
               }
-              tabs[0].push([Q,T]);
-              tabs[2].push([T,sim.ss.vol()]);
-              tabs[3].push([T,P]);
-              $.plot( $('#plot'), [ { 
-                data: tabs[$('#plottype option:selected').val()], 
-                color : 'rgb(200,0,0)', 
-                label : $('#plottype option:selected').text() 
-              } ] );
-              rcount = 0;
-              Q += heat();
+              P = 0.0;
+              T = 0.0;
             }
-            P = 0.0;
-            T = 0.0;
           }
-        }
-      }, 1000/50 );
-*/
+        }, 1000/50 );
+        return function() { clearInterval(handler); }
+      }
+
       // add heat to the system
       function heat() {
         var Q = 0.0, tm = 0.0, cm = new jsmd.Vector();

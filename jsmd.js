@@ -88,7 +88,7 @@ function initJSMD(dim) {
     this.renderChain = [ renderAtoms, renderForces, renderBarriers ];
 
     // setup default compute chain
-    this.computeChain = [ computeVerlet1, computeWrapUpdate, computeForces, computeVerlet2 ];
+    this.computeChain = [ computeVerlet1, computeWrap, computeForces, computeVerlet2 ];
     
     // timestep data
     this.dt = 0.0;   // set by dynamic timestepper
@@ -139,6 +139,9 @@ function initJSMD(dim) {
         F,dr, // float
         f, // function
         rvec; // Vector
+
+    // request up-to-date neighborlist
+    this.nl.update(Math.sqrt(store.rmax));
 
     // zero forces set timestep
     for( i = 0; i < this.atoms.length; ++i ) {
@@ -219,16 +222,20 @@ function initJSMD(dim) {
     }
   }
   
-  // wrap atoms and update neighbor lists (needs store.rmax)
-  function computeWrapUpdate(store) {
+  // wrap atoms 
+  function computeWrap(store) {
     var i;
     for( i = 0; i < this.atoms.length; ++i ) {
       this.atoms[i].p.wrap(this.ss);
     }
+  }
+  
+  // update neighbor lists (needs store.rmax) TODO: not needed right now
+  function computeUpdate(store) {
     this.nl.update(Math.sqrt(store.rmax));
   }
   
-  // wrap atoms and update neighbor lists (needs store.rmax)
+  // bounce atoms
   function computeBounce(store) {
     var i, p, v;
     for( i = 0; i < this.atoms.length; ++i ) {
@@ -250,7 +257,6 @@ function initJSMD(dim) {
         p.z = 2.0*this.ss.z - p.z; v.z = -v.z;
       }
     }
-    //this.nl.update(Math.sqrt(store.rmax));
   }
   
   // second velocity verlet step
@@ -618,7 +624,8 @@ function initJSMD(dim) {
       verlet1 : computeVerlet1,
       verlet2 : computeVerlet2,
       bounce : computeBounce,
-      wrapUpdate : computeWrapUpdate,
+      wrap : computeWrap,
+      update : computeUpdate,
       berendsenP: computeBerendsenP,
       thermostat: computeThermostat
     },

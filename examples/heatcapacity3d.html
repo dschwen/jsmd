@@ -136,11 +136,25 @@
         <div class="box green">
           <input id="ploton" type="checkbox" onclick="ploton=this.checked">
           <label for="ploton">Gather and plot data</label><br/>
-          Plot <select id="plottype">
-            <option value="0">Temperatue vs. added heat T(Q)</option>
-            <option value="1">Heatcapacity vs. Temperature c(T)</option>
-            <option value="2">Volume vs. Temperature V(T)</option>
-            <option value="3">Presure vs. Temperature P(T)</option>
+          Plot 
+          <select id="plottypeY">
+            <option value="0" selected>Temperatue</option>
+            <option value="1">Work performed by piston (atomic)</option>
+            <option value="2">Work performed by piston (p dV)</option>
+            <option value="3">Added heat</option>
+            <option value="4">Heatcapacity</option>
+            <option value="5">Volume</option>
+            <option value="6">Presure</option>
+          </select>
+          vs. 
+          <select id="plottypeX">
+            <option value="0">Temperatue</option>
+            <option value="1">Work performed by piston (atomic)</option>
+            <option value="2">Work performed by piston (p dV)</option>
+            <option value="3">Added heat</option>
+            <option value="4">Heatcapacity</option>
+            <option value="5">Volume</option>
+            <option value="6" selected>Presure</option>
           </select>
         </div>
 
@@ -183,11 +197,11 @@
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
-          render3d, stopAnim, stopCompute, 
+          render3d, stopAnim, stopCompute, ploton = false,
           compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
-          pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(-1.0,0,0), on: false },
+          pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(-1.0,0,0), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
-          tabs = [ [],[],[],[],[] ];
+          tabs = [ [],[],[],[],[],[],[] ];
 
       function gostep(n1,n2) {
         var x,y,z,n;
@@ -379,15 +393,23 @@
               rcount++;
               if( ploton && rcount > compOpt.equilibrate ) {
                 log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
+
                 l = tabs[0].length;
-                if( l > 0 ) {
-                  tabs[1].push([T,(Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) ]);
+                tabs[0].push(T);
+                tabs[1].push(pistonOpt.U);
+                tabs[2].push(pistonOpt.PdV);
+                tabs[3].push(Q);
+                tabs[4].push( (l>0) ? (Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) : 0 );
+                tabs[5].push(sim.ss.vol());
+                tabs[6].push(P);
+
+                var px = $('#plottypeX option:selected').val(),
+                    py = $('#plottypeY option:selected').val(), i, pd =[];
+                for( i = 0; i <= l; ++i ) {
+                  pd.push( [ tabs[px][i], tabs[py][i] ] );
                 }
-                tabs[0].push([Q,T]);
-                tabs[2].push([T,sim.ss.vol()]);
-                tabs[3].push([T,P]);
                 $.plot( $('#plot'), [ { 
-                  data: tabs[$('#plottype option:selected').val()], 
+                  data: pd, 
                   color : 'rgb(200,0,0)', 
                   label : $('#plottype option:selected').text() 
                 } ] );
@@ -453,19 +475,22 @@
       }
 
       // moving walls (modified from computeBounce))
-      var mwU = 0.0;
       function computeMovingWall(store) {
-        var i, p, v, v2 = null, 
+        var i, p, v, v2, 
+            mwU = 0.0, dV,
             mwdss =  pistonOpt.on ? pistonOpt.sv : new jsmd.Vector(),
             mwss = jsmd.Vector.scale(mwdss,this.dt);
 
         // move walls (subtract twice since both opposing walls are moving in!)
+        dV = this.ss.vol();
         this.ss.sub(mwss);
         this.ss.sub(mwss);
+        dV -= this.ss.vol();
 
         for( i = 0; i < this.atoms.length; ++i ) {
           p = this.atoms[i].p;
           p.sub(mwss);
+          v2 = null;
           v = this.atoms[i].v;
           if( p.x < 0 ) {
             p.x = -p.x; v.x = -v.x;
@@ -499,6 +524,8 @@
             mwU += 0.5 * sim.types[this.atoms[i].t].m * (v.len2()-v2); 
           }
         }
+        pistonOpt.U += mwU;
+        pistonOpt.PdV += this.P*dV;
       }
 
       // code for the two boundary condition animations in step1

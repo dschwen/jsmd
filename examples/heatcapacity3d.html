@@ -114,7 +114,15 @@
           <button onclick="addvac()">Add vacancy</button><br/>
         </div>
 
-        <div class="box green">
+        <div class="box">
+          <input id="piston" type="checkbox" onclick="pistonOpt.on=this.checked">
+          <label for="piston">Move piston</label><br/>
+          max<sub>x</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
+          min<sub>x</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/>
+          v<sub>x</sub>=<input type="number" value="-1.0" onchange="pistonOpt.sv.x=this.value"/>
+        </div>
+<!--
+        <div class="box">
           <input id="ramp" type="checkbox" onclick="ramp(this)">
           <label for="ramp">Auto ramp-up</label><br/>
           Plot <select id="plottype">
@@ -124,15 +132,26 @@
             <option value="3">Presure vs. Temperature P(T)</option>
           </select>
         </div>
-
+-->
         <div class="box green">
+          <input id="ploton" type="checkbox" onclick="ploton=this.checked">
+          <label for="ploton">Gather and plot data</label><br/>
+          Plot <select id="plottype">
+            <option value="0">Temperatue vs. added heat T(Q)</option>
+            <option value="1">Heatcapacity vs. Temperature c(T)</option>
+            <option value="2">Volume vs. Temperature V(T)</option>
+            <option value="3">Presure vs. Temperature P(T)</option>
+          </select>
+        </div>
+
+        <div class="box">
           <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
           <label for="baro">Activate barostat</label><br/>
           P<sub>0</sub>=<input type="number" value="0.0" onchange="baropt.P0=this.value"/>
           &tau;=<input type="number" value="100.0" onchange="baropt.tau=this.value"/>
         </div>
 
-        <div class="box green">
+        <div class="box">
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
           T<sub>0</sub>=<input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
@@ -164,7 +183,9 @@
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
-          render3d, stopAnim, stopCompute, compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 },
+          render3d, stopAnim, stopCompute, 
+          compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
+          pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(-1.0,0,0), on: false },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
           tabs = [ [],[],[],[],[] ];
 
@@ -356,7 +377,7 @@
               showT.text(T);
               count = 0;
               rcount++;
-              if( rup && rcount > compOpt.equilibrate ) {
+              if( ploton && rcount > compOpt.equilibrate ) {
                 log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
                 l = tabs[0].length;
                 if( l > 0 ) {
@@ -371,7 +392,7 @@
                   label : $('#plottype option:selected').text() 
                 } ] );
                 rcount = 0;
-                Q += heat();
+                //Q += heat();
               }
               P = 0.0;
               T = 0.0;
@@ -420,14 +441,7 @@
         // return average energy added per atom
         return Q/sim.atoms.length;
       }
-      // toggle temperature ramping
-      function ramp(box) {
-        rup = box.checked;
-      }
-      // toggle visual update
-      function toggledraw(box) {
-        vup = box.checked;
-      }
+
       // toggle barostat
       function toggleBarostat(box) {
         sim.computeChain[4] = box.checked ? barostat : null;
@@ -439,9 +453,11 @@
       }
 
       // moving walls (modified from computeBounce))
-      var mwU = 0.0, mwdss = new jsmd.Vector();
+      var mwU = 0.0;
       function computeMovingWall(store) {
-        var i, p, v, v2 = null, mwss = jsmd.Vector.scale(mwdss,this.dt);
+        var i, p, v, v2 = null, 
+            mwdss =  pistonOpt.on ? pistonOpt.sv : new jsmd.Vector(),
+            mwss = jsmd.Vector.scale(mwdss,this.dt);
 
         // move walls (subtract twice since both opposing walls are moving in!)
         this.ss.sub(mwss);

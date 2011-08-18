@@ -1,11 +1,9 @@
 function Linkcell3d( sim ) {
-  var j,rm;
-  
   // link to host simulation object
   this.sim = sim;
 
   // cut off must be set
-  rm = sim.rc + sim.rp;
+  var rm = sim.rc + sim.rp;
   this.rm2 = rm*rm;
 
   // number and size of cells (have at least 3 cells in each direction)
@@ -19,11 +17,14 @@ function Linkcell3d( sim ) {
 
 Linkcell3d.prototype.setup = function() {
   // build the 3D linkcell grid
-  var i, l = new Array(this.nx);
+  var i, j, k, l = new Array(this.nx);
   for( i = 0; i < this.nx; ++i ) {
     l[i] = new Array(this.ny);
     for( j = 0; j < this.ny; ++j ) {
       l[i][j] = new Array(this.nz);
+      for( k = 0; k < this.nz; ++k ) {
+        l[i][j][k] = [];
+      }
     }
   }
   this.data = l;
@@ -35,16 +36,14 @@ Linkcell3d.prototype.clear = function() {
   for( i = 0; i < this.nx; ++i ) {
     for( j = 0; j < this.ny; ++j ) {
       for( k = 0; k < this.nz; ++k ) {
-        this.data[i][j][k] = [];
+        //this.data[i][j][k] = [];
+        this.data[i][j][k].length = 0;
       }
     }
   }
 }
 
 Linkcell3d.prototype.update = function() {
-  // clear first
-  this.clear();
-
   // calculate optimal linkcell size (box size can be dynamic)
   var rm = sim.rc + sim.rp,
       nnx = Math.max( 3, Math.floor(sim.ss.x/rm) ),
@@ -57,8 +56,11 @@ Linkcell3d.prototype.update = function() {
     this.ny = nny;
     this.nz = nnz;
     this.setup();
+  } else {
+    // clear
+    this.clear();
   }
-   
+  
   // cell size
   var dx = sim.ss.x/this.nx,
       dy = sim.ss.y/this.ny,

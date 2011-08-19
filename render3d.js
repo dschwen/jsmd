@@ -1,7 +1,7 @@
 function initRender3D( sim, container ) {
   var container;
 
-  var renderer = null, i;
+  var renderer = null, i, webgl;
   var cam = { phi: 0, theta: Math.PI/2, r: 100 };
   var intHandler = null;
   var dragging = false;
@@ -19,10 +19,12 @@ function initRender3D( sim, container ) {
   if (typeof Float32Array != "undefined") {
     try {
       renderer = new THREE.WebGLRenderer( { clearColor: 0xffffff ,clearAlpha: 1 }  );
+      webgl = true;
     } catch(e) { }
   }
   if( !renderer ) {
     renderer = new THREE.CanvasRenderer( { clearColor: 0xffffff ,clearAlpha: 0 }  );
+    webgl = false;
   }
   renderer.setSize( cw, ch );
   geometry = new THREE.Geometry();
@@ -32,7 +34,7 @@ function initRender3D( sim, container ) {
   material.color.setRGB( 1.0, 0.0, 0.0 );
 
   // atoms (added dynamically)
-  particles = new THREE.ParticleSystem( geometry, material );
+  particles = webgl ? new THREE.ParticleSystem( geometry, material ) : new THREE.Object3D();
   particles.sortParticles = true;
   particles.updateMatrix();
   scene.addObject( particles );
@@ -91,24 +93,53 @@ function initRender3D( sim, container ) {
   {
     var i,j;
     
-    // did the number of atoms in the scene change?
-    if( sim.atoms.length < particles.geometry.vertices.length ) {
-      particles.geometry.vertices.splice( sim.atoms.length, particles.geometry.vertices.length-sim.atoms.length );
+    // draw a particle in 2D canavas fallback mode
+    var PI2 = Math.PI * 2.0;
+    function fallbackparticle(c) {
+      c.beginPath();
+      c.arc( 0, 0, 1, 0, PI2, true );
+      c.closePath();
+      c.fill();
     }
-    if( sim.atoms.length > particles.geometry.vertices.length ) {
-      for( i = particles.geometry.vertices.length; i < sim.atoms.length; ++i ) {
+
+    // did the number of atoms in the scene change?
+    if( webgl ) {
+      // WebGL visialization
+      if( sim.atoms.length < particles.geometry.vertices.length ) {
+        particles.geometry.vertices.splice( sim.atoms.length, particles.geometry.vertices.length-sim.atoms.length );
+      }
+      while( sim.atoms.length > particles.geometry.vertices.length ) {
         particles.geometry.vertices.push( new THREE.Vertex( new THREE.Vector3(0,0,0) ) );
+      }
+      // update vertices
+      for( i = 0; i < sim.atoms.length; ++i )
+      {
+        particles.geometry.vertices[i].position.x = sim.atoms[i].p.x - sim.ss.x/2;
+        particles.geometry.vertices[i].position.y = sim.atoms[i].p.y - sim.ss.y/2;
+        particles.geometry.vertices[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;
+      }
+      particles.geometry.__dirtyVertices = true;
+    } else {
+      // fallback visualization
+      while( sim.atoms.length < particles.children.length ) {
+        particles.children.removeChild( particles.children[0] );
+      }
+      while( sim.atoms.length > particles.children.length ) {
+        var particle = new THREE.Particle( new THREE.ParticleCanvasMaterial( { color: 0xee0000, program: fallbackparticle } ) );
+        particle.scale.x = 0.5;
+        particle.scale.y = 0.5;
+        particle.scale.z = 0.5;
+        particles.addChild(particle);
+      }
+      // update vertices
+      for( i = 0; i < sim.atoms.length; ++i )
+      {
+        particles.children[i].position.x = sim.atoms[i].p.x - sim.ss.x/2;
+        particles.children[i].position.y = sim.atoms[i].p.y - sim.ss.y/2;
+        particles.children[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;
       }
     }
     
-    // update vertices
-    for( i = 0; i < sim.atoms.length; ++i )
-    {
-      particles.geometry.vertices[i].position.x = sim.atoms[i].p.x - sim.ss.x/2;
-      particles.geometry.vertices[i].position.y = sim.atoms[i].p.y - sim.ss.y/2;
-      particles.geometry.vertices[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;
-    }
-    particles.geometry.__dirtyVertices = true;
 
     // update simulation box outline
     for (i = 0; i < lg.length; i++) {

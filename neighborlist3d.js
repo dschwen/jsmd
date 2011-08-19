@@ -3,6 +3,7 @@ function Neighborlist3d(lc) {
   this.dr = 0.0;
   this.data = [];
   this.count = 0;
+  this.pbc = true;
 }
 
 Neighborlist3d.prototype.clear = function() {
@@ -53,9 +54,21 @@ Neighborlist3d.prototype.update = function(dr) {
 
           // loop over half the neighbor cells
           for( m = 0; m < neigh.length; ++m ) {
-            i2 = (i+neigh[m][0]) % this.lc.nx;
-            j2 = (j+neigh[m][1]) % this.lc.ny;
-            k2 = (k+neigh[m][2]) % this.lc.nz;
+            i2 = (i+neigh[m][0]);
+            if( this.pbc ) {
+	      i2 %= this.lc.nx;
+	    } else if( i2 >= this.lc.nx ) continue;
+	
+            j2 = (j+neigh[m][1]);
+            if( this.pbc ) {
+              j2 %= this.lc.ny;
+	    } else if( j2 >= this.lc.ny ) continue;
+
+            k2 = (k+neigh[m][2]);
+            if( this.pbc ) {
+              k2 %= this.lc.nz;
+	    } else if( k2 >= this.lc.nz ) continue;
+
             // loop over all atoms in those neighbor cells
             for( l = 0; l < this.lc.data[i2][j2][k2].length; ++l ) {
               la = this.lc.data[i2][j2][k2][l];

@@ -145,6 +145,8 @@
             <option value="4">Heatcapacity</option>
             <option value="5">Volume</option>
             <option value="6">Presure</option>
+            <option value="7">Simulation step</option>
+            <option value="8">Simulation time</option>
           </select>
           vs. 
           <select id="plottypeX">
@@ -155,6 +157,8 @@
             <option value="4">Heatcapacity</option>
             <option value="5">Volume</option>
             <option value="6" selected>Presure</option>
+            <option value="7">Simulation step</option>
+            <option value="8">Simulation time</option>
           </select>
         </div>
 
@@ -182,7 +186,7 @@
         </div>
       </div>
 
-      <div style="width: 50%; height: 200px; overflow:scroll; border: 1px solid gray"><pre id="log"></pre></div>
+      <div style="width: 50%; height: 200px; overflow:scroll; border: 1px solid gray; display: none"><pre id="log"></pre></div>
       <button onclick="gostep(3,2)">Back</button>
     </div>
 
@@ -201,8 +205,9 @@
           compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
           pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(-1.0,0,0), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
-          tabs = [ [],[],[],[],[],[],[] ];
+          tabs = [ [],[],[],[],[],[],[],[],[] ];
 
+      updateRadios('#step1');
       function gostep(n1,n2) {
         var x,y,z,n;
         $('#step'+n1).hide(400);
@@ -334,6 +339,9 @@
           case 1:
             bcvis.start();
             break;
+          case 2: 
+            updateRadios('#step2');
+            break
           case 3: 
             stopAnim = startAnim();
             stopCompute = startCompute();
@@ -392,8 +400,6 @@
               count = 0;
               rcount++;
               if( ploton && rcount > compOpt.equilibrate ) {
-                log.innerHTML += Q + ' ' + T + ' ' + P + ' ' + sim.ss.vol() + "\n";
-
                 l = tabs[0].length;
                 tabs[0].push(T);
                 tabs[1].push(pistonOpt.U);
@@ -402,6 +408,8 @@
                 tabs[4].push( (l>0) ? (Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) : 0 );
                 tabs[5].push(sim.ss.vol());
                 tabs[6].push(P);
+                tabs[7].push(sim.step);
+                tabs[8].push(sim.time);
 
                 var px = $('#plottypeX option:selected').val(),
                     py = $('#plottypeY option:selected').val(), i, pd =[];

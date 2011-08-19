@@ -128,7 +128,7 @@ function initRender3D( sim, container ) {
     } else {
       // fallback visualization
       while( sim.atoms.length < particles.children.length ) {
-        particles.children.removeChild( particles.children[0] );
+        particles.removeChild( particles.children[0] );
       }
       while( sim.atoms.length > particles.children.length ) {
         var particle = new THREE.Particle( new THREE.ParticleCanvasMaterial( { color: 0xee0000, program: fallbackparticle } ) );

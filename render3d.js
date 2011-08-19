@@ -100,6 +100,12 @@ function initRender3D( sim, container ) {
       c.arc( 0, 0, 1, 0, PI2, true );
       c.closePath();
       c.fill();
+      c.strokeStyle = "rgba(0,0,0,0.5)";
+      c.lineWidth = 0.1;
+      c.beginPath();
+      c.arc( 0, 0, 0.9, 0, PI2, true );
+      c.closePath();
+      c.stroke();
     }
 
     // did the number of atoms in the scene change?

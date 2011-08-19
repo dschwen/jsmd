@@ -56,18 +56,18 @@ Neighborlist3d.prototype.update = function(dr) {
           for( m = 0; m < neigh.length; ++m ) {
             i2 = (i+neigh[m][0]);
             if( this.pbc ) {
-	      i2 %= this.lc.nx;
-	    } else if( i2 >= this.lc.nx ) continue;
+              i2 %= this.lc.nx;
+            } else if( i2 >= this.lc.nx ) continue; //TODO: wrong -1 at 0 -> nx-1!!!!
 	
             j2 = (j+neigh[m][1]);
             if( this.pbc ) {
               j2 %= this.lc.ny;
-	    } else if( j2 >= this.lc.ny ) continue;
+            } else if( j2 >= this.lc.ny ) continue;
 
             k2 = (k+neigh[m][2]);
             if( this.pbc ) {
               k2 %= this.lc.nz;
-	    } else if( k2 >= this.lc.nz ) continue;
+            } else if( k2 >= this.lc.nz ) continue;
 
             // loop over all atoms in those neighbor cells
             for( l = 0; l < this.lc.data[i2][j2][k2].length; ++l ) {

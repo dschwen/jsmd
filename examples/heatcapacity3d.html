@@ -117,9 +117,10 @@
         <div class="box">
           <input id="piston" type="checkbox" onclick="pistonOpt.on=this.checked">
           <label for="piston">Move piston</label><br/>
-          max<sub>x</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
-          min<sub>x</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/>
-          v<sub>x</sub>=<input type="number" value="-1.0" onchange="pistonOpt.sv.x=this.value"/>
+          max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
+          min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/><br/>
+          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" onchange="pistonOpt.sv.z=this.value"  />
+          <button onclick="pistonOpt.sv.z *=-1; $('#pistonvz').val(pistonOpt.sv.z)">Reverse</button>
         </div>
 <!--
         <div class="box">
@@ -160,6 +161,7 @@
             <option value="7">Simulation step</option>
             <option value="8">Simulation time</option>
           </select>
+          <button onclick="getRawData(true)">Get data</button>
         </div>
 
         <div class="box">
@@ -176,9 +178,14 @@
           &tau;=<input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
         </div>
 
-        <!--<div class="box green">
-          <input id="draw" type="checkbox" onclick="toggledraw(this)" checked><label for="draw">Update visuals</label>
-        </div>-->
+        <div class="box green">
+          Get raw data for
+          <select id="datatype">
+            <option value="0">Atom velocities</option>
+            <option value="1">Atom positions</option>
+          </select>
+          <button onclick="getRawData(false)">Go</button>
+        </div>
 
         <div class="box blue">
           <div><i>T = <span id="showT"></span></i> energy units</div>
@@ -203,11 +210,23 @@
           showP = $('#showP'),
           render3d, stopAnim, stopCompute, ploton = false,
           compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
-          pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(-1.0,0,0), on: false, U: 0.0, PdV: 0.0 },
+          pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(0,0,0.2), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
           tabs = [ [],[],[],[],[],[],[],[],[] ];
 
-      updateRadios('#step1');
+      // initialization code
+      $(function() {
+        // make sure the box highlighting corresponds to the radio button state (some browseres restore forms)
+        updateRadios('#step1');
+
+        // duplicate the onchange hander into click handler for input[type=number] elements
+        // workaround for http://code.google.com/p/chromium/issues/detail?id=51836
+        $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onclick=e.onchange; } } );
+        
+        // start animations for boundary condition selection
+        bcvis.start();
+      });
+
       function gostep(n1,n2) {
         var x,y,z,n;
         $('#step'+n1).hide(400);
@@ -432,6 +451,20 @@
         return function() { clearInterval(handler); }
       }
 
+      function getRawData(tables) {
+        var i;
+        if(tables) {
+        } else {
+          switch( $('#datatype option:selected').val() ) {
+            case 0 :
+              for( i = 0; i < sim.atoms.length; ++i ) {
+
+              }
+              break;
+          }
+        }
+      }
+
       // add heat to the system
       function heat() {
         var Q = 0.0, tm = 0.0, cm = new jsmd.Vector();
@@ -494,6 +527,16 @@
         this.ss.sub(mwss);
         this.ss.sub(mwss);
         dV -= this.ss.vol();
+
+        // test for min max
+        if( ( mwss.z > 0 && this.ss.z <= pistonOpt.min ) || 
+            ( mwss.z < 0 && this.ss.z >= pistonOpt.max ) ) {
+          // either 
+          //   pistonOpt.sv.scale(-1) 
+          // or
+          pistonOpt.on = false;
+          $('#piston').attr('checked','');
+        }
 
         for( i = 0; i < this.atoms.length; ++i ) {
           p = this.atoms[i].p;
@@ -590,7 +633,6 @@
         }
         return { start: step, stop: function() { clearTimeout(handler); } }
       })();
-      $(bcvis.start);
 
       function updateRadios(sel) {
         $(sel).find('.radioon').addClass('radiooff').removeClass('radioon');

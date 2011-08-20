@@ -60,7 +60,7 @@
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="1.0" id="sgtemp"/> (temperature)<br/>
-          $L=$ <input type="number" value="1.0" id="sglen"/> (box size, $V=L^3$)<br/>
+          $L=$ <input type="number" value="40.0" id="sglen"/> (box size, $V=L^3$)<br/>
       	</div>
       </div>
       <div style="width: 45%; float: right">
@@ -107,6 +107,10 @@
     <div id="step3">
       <h1>Simulation</h1>
       <div id="simcan"></div>
+      <div class="box" id="logbox" style="width: 500px; display: none">
+        <pre id="log" style="height: 200px; overflow:scroll; border: 1px solid gray"></pre>
+        <button onclick="$('#logbox').hide(400)">Ok</button>
+      </div>
       <div id="plot" style="width: 500px; height: 450px; float: right"></div>
       <div style="width: 500px">
         <div class="box green">
@@ -194,7 +198,6 @@
         </div>
       </div>
 
-      <div style="width: 50%; height: 200px; overflow:scroll; border: 1px solid gray; display: none"><pre id="log"></pre></div>
       <button onclick="gostep(3,2)">Back</button>
     </div>
 
@@ -453,17 +456,26 @@
       }
 
       function getRawData(tables) {
-        var i;
+        var i, text = "";
         if(tables) {
         } else {
           switch( $('#datatype option:selected').val() ) {
             case 0 :
+              text = "# " + sim.atoms.length + " atom positions\n";
               for( i = 0; i < sim.atoms.length; ++i ) {
-
+                text += i + " " + sim.atoms[i].p.x + " " + sim.atoms[i].p.y + " " + sim.atoms[i].p.z + "\n";
+              }
+              break;
+            case 1 :
+              text = "# " + sim.atoms.length + " atom velocities\n";
+              for( i = 0; i < sim.atoms.length; ++i ) {
+                text += i + " " + sim.atoms[i].v.x + " " + sim.atoms[i].v.y + " " + sim.atoms[i].v.z + "\n";
               }
               break;
           }
         }
+        logp.text(text);
+        $('#logbox').show(400);
       }
 
       // add heat to the system

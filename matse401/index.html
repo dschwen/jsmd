@@ -60,6 +60,7 @@
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="1.0" id="sgtemp"/> (temperature)<br/>
+          $L=$ <input type="number" value="1.0" id="sglen"/> (box size, $V=L^3$)<br/>
       	</div>
       </div>
       <div style="width: 45%; float: right">
@@ -119,7 +120,7 @@
           <label for="piston">Move piston</label><br/>
           max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
           min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/><br/>
-          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" onchange="pistonOpt.sv.z=this.value"  />
+          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  />
           <button onclick="pistonOpt.sv.z *=-1; $('#pistonvz').val(pistonOpt.sv.z)">Reverse</button>
         </div>
 <!--
@@ -269,7 +270,7 @@
                 var num = $('#sgnum').val(),
                     temp = $('#sgtemp').val(),
                     i,w,x1,x2,gr=[];
-                ss = 40;
+                ss = $('#sglen').val();
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
                 for( n = 0; n < num; ++n ) {

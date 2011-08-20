@@ -110,6 +110,12 @@ function initJSMD(dim) {
     this.T = 0.0;
     // instantaneous pressure
     this.P = 0.0;
+    
+    // tally work performed on the system by various fixes
+    this.work = {
+      thermostat : 0.0,
+      barostat : 0.0
+    }
   }
   Simulation.prototype.setInteraction = function(t,f) {
     // set the intercation function f(r,t) for the t=[a,b] atom types
@@ -300,7 +306,7 @@ function initJSMD(dim) {
   // Berendsen hydrostatic barostat factory function
   function computeBerendsenP( options ) {
     return function(store) {
-      var i, l = ( 1.0 - this.dt/options.tau * ( options.P0 - this.P ) );
+      var dV, i, l = ( 1.0 - this.dt/options.tau * ( options.P0 - this.P ) );
 
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {
@@ -308,14 +314,19 @@ function initJSMD(dim) {
       }
       
       // scale box
+      dV = this.ss.vol();
       this.ss.scale(l);
+      dV = dV - this.ss.vol();
+      
+      // work performed by the barostat on the system (negative values indicate energy removed from the system) 
+      this.work = this.P * dV;
     }
   }
 
   // simple scaling thermostat
   function computeThermostat( options ) {
     return function(store) {
-      var i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.T0 - this.T ) );
+      var dT, i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.T0 - this.T ) );
 
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {
@@ -323,7 +334,12 @@ function initJSMD(dim) {
       }
       
       // new temperature
+      dT = this.T;
       this.T *= l*l;
+      sT = this.T - dT;
+      
+      // work performed by the barostat on the system (negative values indicate energy removed from the system)
+      this.work.thermostat += dT * this.atoms.length;
     }
   }
   

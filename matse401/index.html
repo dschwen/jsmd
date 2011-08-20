@@ -22,9 +22,17 @@
     </script>
     <style>
       div.box { border: 1px solid gray; margin: 0.2em; padding: 0.2em; }
+      .right { margin-left: 530px; float: right; width: 100% }
+
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
-
+      .width100 {
+        width: 100%;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+      }
+      
       #step1,#step2,#step3 {
         border: 1px dotted blue;
         background-color: #eeeeee;
@@ -106,12 +114,14 @@
     <!-- Step 3: run stuff -->
     <div id="step3">
       <h1>Simulation</h1>
-      <div id="simcan"></div>
-      <div class="box" id="logbox" style="width: 500px; display: none">
-        <pre id="log" style="height: 200px; overflow:scroll; border: 1px solid gray"></pre>
+      <div class="width100" style="border: 1px solid gray; height: 600px" id="simcan"></div>
+      <div class="box right" id="logbox" style="display: none">
+        <textarea id="log" style="height: 300px" class="width100" wrap="off"></textarea>
         <button onclick="$('#logbox').hide(400)">Ok</button>
       </div>
-      <div id="plot" style="width: 500px; height: 450px; float: right"></div>
+      <div id="plotbox" class="box right">
+        <div id="plot" style="width: 100%; height: 450px;"></div>
+      </div>
       <div style="width: 500px">
         <div class="box green">
           <button onclick="heat()">Add heat</button>
@@ -179,15 +189,15 @@
         <div class="box">
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
-          T<sub>0</sub>=<input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
+          T<sub>0</sub>=<input type="number" value="0.5" step="0.1" onchange="thermopt.T0=this.value"/>
           &tau;=<input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
         </div>
 
         <div class="box green">
           Get raw data for
           <select id="datatype">
-            <option value="0">Atom velocities</option>
-            <option value="1">Atom positions</option>
+            <option value="vel">Atom velocities</option>
+            <option value="pos">Atom positions</option>
           </select>
           <button onclick="getRawData(false)">Go</button>
         </div>
@@ -320,10 +330,9 @@
             $('#simcan').empty();
 
             // initialize render3d (container must not be hidden!)
-            var newcon = $('<div></div>').css('height','600px');
-            $('body').append(newcon);
-            render3d = initRender3D( sim, newcon[0] );
-            $('#simcan').append(newcon);
+            $('#step3').css( { display: "block", visibility: "hidden" } )
+            render3d = initRender3D( sim, $('#simcan')[0] );
+            $('#step3').css( { display: "none", visibility: "visible" } )
 
             bcvis.stop();
             break;
@@ -460,13 +469,13 @@
         if(tables) {
         } else {
           switch( $('#datatype option:selected').val() ) {
-            case 0 :
+            case "pos" :
               text = "# " + sim.atoms.length + " atom positions\n";
               for( i = 0; i < sim.atoms.length; ++i ) {
                 text += i + " " + sim.atoms[i].p.x + " " + sim.atoms[i].p.y + " " + sim.atoms[i].p.z + "\n";
               }
               break;
-            case 1 :
+            case "vel" :
               text = "# " + sim.atoms.length + " atom velocities\n";
               for( i = 0; i < sim.atoms.length; ++i ) {
                 text += i + " " + sim.atoms[i].v.x + " " + sim.atoms[i].v.y + " " + sim.atoms[i].v.z + "\n";

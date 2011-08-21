@@ -21,8 +21,8 @@
       });
     </script>
     <style>
-      div.box { border: 1px solid gray; margin: 0.2em; padding: 0.2em; }
-      .right { margin-left: 530px; float: right; width: 100% }
+      div.box { border: 1px solid gray; margin: 5px; padding: 5px; }
+      .right { margin-left: 510px !important }
 
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
@@ -114,15 +114,8 @@
     <!-- Step 3: run stuff -->
     <div id="step3">
       <h1>Simulation</h1>
-      <div class="width100" style="border: 1px solid gray; height: 600px" id="simcan"></div>
-      <div class="box right" id="logbox" style="display: none">
-        <textarea id="log" style="height: 300px" class="width100" wrap="off"></textarea>
-        <button onclick="$('#logbox').hide(400)">Ok</button>
-      </div>
-      <div id="plotbox" class="box right">
-        <div id="plot" style="width: 100%; height: 450px;"></div>
-      </div>
-      <div style="width: 500px">
+      <div class="width100" style="border: 1px solid gray; margin: 5px; height: 600px" id="simcan"></div>
+      <div style="width: 500px; float: left">
         <div class="box green">
           <button onclick="heat()">Add heat</button>
           <button onclick="cool()">Remove heat</button>
@@ -207,7 +200,14 @@
           <div><i>P = <span id="showP"></span></i> pressure units</div>
         </div>
       </div>
-
+      <div class="box right" id="logbox" style="display: none">
+        <textarea id="log" style="height: 300px" class="width100" wrap="off"></textarea>
+        <button onclick="$('#logbox').hide(400)">Ok</button>
+      </div>
+      <div id="plotbox" class="box right">
+        <div id="plot" style="width: 100%; height: 450px;"></div>
+      </div>
+      <br style="clear: both"/>
       <button onclick="gostep(3,2)">Back</button>
     </div>
 

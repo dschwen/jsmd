@@ -511,8 +511,8 @@ function initJSMD(dim) {
     }
   }
 
-  // return a force linearly interpolated from tabulated values of function f (fast!)
-  function forceTabulated(f, dr_, rc_, noint_ ) {
+  // return a linearly interpolation from tabulated values of function f (fast!)
+  function toolTabulate(f, dr_, rc_, noint_ ) {
     // parameters and pretabulated values stored in closure
     var dr = dr_ !== undefined ? dr_ : 0.01,
         rc = rc_ !== undefined ? rc_ : 10.0,
@@ -598,6 +598,55 @@ function initJSMD(dim) {
     return calculateEnergy;
   }
 
+  //
+  // new potential interface
+  //
+  
+  // Lennard-Jones potential
+  function potentialLJ( sigma, epsilon ) {
+    sigma = sigma || 1.0;
+    epsilon  = epsilon  || 10.0;
+    var A2 = 4.0*epsilon*Math.pow(sigma,12.0),
+        B2 = 4.0*epsilon*Math.pow(sigma,6.0),
+        A1 = 12.0*A2, B1 = 6.0*B2;
+
+    return {
+      force : function(r) {
+                return B1*Math.pow(r,-7.0) - A1*Math.pow(r,-13.0);
+              },
+      energy: function(r) {
+                return  A2*Math.pow(r,-12.0) - B2*Math.pow(r,-6.0);
+              }
+    }
+  }
+  
+  // Morse potential
+  function potentialMorse( re_, a_, De_ ) {
+    //De*( 1-exp(-a*(x-re)) )**2, (x-re)**2
+    var re = re_ !== undefined ? re_ : 1.5,
+        a  = a_  !== undefined ? a_  : 2.0,
+        De = De_ !== undefined ? De_ : 1.0;
+
+    return {
+      force:  function(r) {
+                var ex = Math.exp( -a*(r-re) );
+                return 2.0 * a * De * (1-ex) * ex;
+              },
+      energy: function(r) {
+                var ex = Math.exp( -a*(r-re) );
+                return De * (1-ex) * (1-ex);
+              }
+    }    
+  }
+
+  // return a potential with  tabulated and interpolated energy and force functions
+  function potentialTabulated(p, dr_, rc_, noint_ ) {
+    return {
+      force:  toolTabulate( p.force, dr_, rc_, noint_ ),
+      energy: toolTabulate( p.energy, dr_, rc_, noint_ )
+    }
+  }
+
   // configure dimension
   var missing = [];
   if( dim === 2 ) {
@@ -654,13 +703,19 @@ function initJSMD(dim) {
       lennardJones : forceLJ,
       wall : force12,
       morse : forceMorse,
-      tabulated : forceTabulated,
+      tabulated : toolTabulate,
       diff : forceNumericalDiff
     },
     energy : {
       morse : energyMorse,
       lennardJones : energyLJ,
+      tabulated : toolTabulate,
       ZBL : energyZBL
+    },
+    potential : {
+      lennardJones : potentialLJ,
+      morse : potentialMorse,
+      tabulated: potentialTabulated
     }
   };
 };

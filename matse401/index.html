@@ -10,7 +10,6 @@
     <script type="text/javascript" src="../jsmd.js"></script>
     <script type="text/javascript" src="../lib/Three.js"></script>
     <script type="text/javascript" src="../lib/jquery.pack.js"></script>
-    <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
     <script src="../lib/MathJax/MathJax.js">
       MathJax.Hub.Config({
         extensions: ["tex2jax.js","TeX/bbox.js"],
@@ -158,7 +157,7 @@
             <option value="3">Added heat</option>
             <option value="4">Heatcapacity</option>
             <option value="5">Volume</option>
-            <option value="6">Presure</option>
+            <option value="6">Pressure</option>
             <option value="7">Simulation step</option>
             <option value="8">Simulation time</option>
           </select>
@@ -170,7 +169,7 @@
             <option value="3">Added heat</option>
             <option value="4">Heatcapacity</option>
             <option value="5">Volume</option>
-            <option value="6" selected>Presure</option>
+            <option value="6" selected>Pressure</option>
             <option value="7">Simulation step</option>
             <option value="8">Simulation time</option>
           </select>
@@ -494,7 +493,7 @@
               break;
           }
         }
-        logp.text(text);
+        logp[0].value = text;
         $('#logbox').show(400);
       }
 

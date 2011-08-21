@@ -21,7 +21,12 @@
       });
     </script>
     <style>
-      div.box { border: 1px solid gray; margin: 5px; padding: 5px; }
+      div.box { 
+        border: 1px solid gray; margin: 5px; padding: 5px;
+        -moz-box-shadow: 5px 5px 5px #ccc;
+        -webkit-box-shadow: 5px 5px 5px #ccc;
+        box-shadow: 5px 5px 5px #ccc;
+      }
       .right { margin-left: 510px !important }
 
       div.green { background-color: #aaffaa }
@@ -114,7 +119,7 @@
     <!-- Step 3: run stuff -->
     <div id="step3">
       <h1>Simulation</h1>
-      <div class="width100" style="border: 1px solid gray; margin: 5px; height: 600px" id="simcan"></div>
+      <div class="box" style="height: 600px" id="simcan"></div>
       <div style="width: 500px; float: left">
         <div class="box green">
           <button onclick="heat()">Add heat</button>
@@ -448,11 +453,17 @@
                 for( i = 0; i <= l; ++i ) {
                   pd.push( [ tabs[px][i], tabs[py][i] ] );
                 }
-                $.plot( $('#plot'), [ { 
-                  data: pd, 
-                  color : 'rgb(200,0,0)', 
-                  label : $('#plottype option:selected').text() 
-                } ] );
+                $.plot( $('#plot'), 
+                  [ { 
+                    data: pd, 
+                    color : 'rgb(200,0,0)' 
+//                     label : $('#plottype option:selected').text() 
+                  } ],
+                  {
+                    xaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeX option:selected').text() },
+                    yaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeY option:selected').text() }
+                  }
+                );
                 rcount = 0;
                 //Q += heat();
               }

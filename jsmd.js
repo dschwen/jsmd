@@ -373,7 +373,7 @@ function initJSMD(dim) {
       dV = dV - this.ss.vol();
       
       // work performed by the barostat on the system (negative values indicate energy removed from the system) 
-      this.work = this.P * dV;
+      this.work.barostat += this.P * dV;
     }
   }
 

@@ -350,7 +350,7 @@
 
               case 'lj' : 
                 // tabulate the potential with all default options
-                force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
+                force = jsmd.potential.tabulated( jsmd.potential.lennardJones(1.295, 1.0) );
 
                 // set interaction matrix (1x1)
                 sim.computeChain[2] = jsmd.compute.forces;

@@ -111,6 +111,11 @@ function initJSMD(dim) {
     // instantaneous pressure
     this.P = 0.0;
     
+    // kinetic energy (updated every integration step)
+    this.Ekin = 0.0;
+    // potential energy of the system (updated on request only!)
+    this.Epot = 0.0;
+    
     // tally work performed on the system by various fixes
     this.work = {
       thermostat : 0.0,
@@ -143,7 +148,7 @@ function initJSMD(dim) {
   function computeForces(store) {
     var i,j,k,  // integer
         F,dr, // float
-        f, // function
+        p, // potential object
         rvec; // Vector
 
     // request up-to-date neighborlist
@@ -171,9 +176,9 @@ function initJSMD(dim) {
         dr = rvec.len2();
         if( dr < this.rc2 ) {
           dr = Math.sqrt(dr);
-          f = this.interaction[this.atoms[i].t][this.atoms[j].t];
-          if( f !== undefined ) {
-            F = f.call( this, dr, [ this.atoms[i].t, this.atoms[j].t ] );
+          p = this.interaction[this.atoms[i].t][this.atoms[j].t];
+          if( p !== undefined ) {
+            F = p.force.call( this, dr, [ this.atoms[i].t, this.atoms[j].t ] );
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
             this.atoms[j].f.sub(rvec);
@@ -191,9 +196,9 @@ function initJSMD(dim) {
         rvec = this.barriers[j].dist(this.atoms[i].p);
         dr = rvec.pbclen(this.ss);
         if( dr < this.rc ) {
-          f = this.interaction[this.atoms[i].t][this.barriers[j].t];
-          if( f !== undefined ) {
-            F = f.call( this, dr, [ this.atoms[i].t, this.barriers[j].t ] );
+          p = this.interaction[this.atoms[i].t][this.barriers[j].t];
+          if( p !== undefined ) {
+            F = p.force.call( this, dr, [ this.atoms[i].t, this.barriers[j].t ] );
             console.log(dr+','+f);
             rvec.scale(F/dr);
             this.atoms[i].f.add(rvec);
@@ -208,6 +213,55 @@ function initJSMD(dim) {
     // virial (1/3.0 in 3d, 1/2.0 in 2d)
     this.vir /= 2.0;
   }
+
+  function computeEnergy(store) {
+    var i,j,k,  // integer
+        F,dr, // float
+        p, // potential object
+        rvec; // Vector
+
+    // request up-to-date neighborlist
+    if( store !== undefined ) {
+      this.nl.update(Math.sqrt( store.rmax || 0.0 ));
+    }
+    
+    // set energy to zero and then sum up
+    this.Epot = 0.0;
+    
+    // sum total potential energy
+    for( i = 0; i < this.atoms.length; ++i ) {
+      for( k = 0; k < this.nl.data[i].length; ++k ) {  // new iteration over neighborlist
+        j = this.nl.data[i][k];
+
+        rvec = jsmd.Vector.sub( this.atoms[j].p, this.atoms[i].p);
+        rvec.dwrap(this.ss);
+        dr = rvec.len2();
+        if( dr < this.rc2 ) {
+          dr = Math.sqrt(dr);
+          p = this.interaction[this.atoms[i].t][this.atoms[j].t];
+          if( p !== undefined ) {
+            this.Epot += p.energy.call( this, dr, [ this.atoms[i].t, this.atoms[j].t ] );
+          }
+        }
+      }
+    }
+
+    // add barrier interaction energies
+    for( i = 0; i < this.atoms.length; ++i ) {
+      for( j = 0; j < this.barriers.length; ++j ) {
+        // find distance to barrier
+        rvec = this.barriers[j].dist(this.atoms[i].p);
+        dr = rvec.pbclen(this.ss);
+        if( dr < this.rc ) {
+          p = this.interaction[this.atoms[i].t][this.barriers[j].t];
+          if( p !== undefined ) {
+            this.Epot = p.energy.call( this, dr, [ this.atoms[i].t, this.barriers[j].t ] );
+          }
+        }
+      }
+    }
+  }
+  Simulation.prototype.updateEnergy =  computeEnergy;
   
   // first velocity verlet step
   function computeVerlet1(store) {
@@ -269,7 +323,7 @@ function initJSMD(dim) {
   function computeVerlet2(store) {
     var i, m, v2, vmax = 0.0, amax = 0.0, dmax;
     
-    this.T = 0.0;
+    this.Ekin = 0.0;
     for( i = 0; i < this.atoms.length; ++i ) {
       m = this.types[this.atoms[i].t].m;
       this.atoms[i].v.add( jsmd.Vector.scale(this.atoms[i].f, 0.5/m*this.dt) );
@@ -279,19 +333,19 @@ function initJSMD(dim) {
 
       // calculate temperature
       v2 = this.atoms[i].v.len2();
-      this.T += this.types[this.atoms[i].t].m * v2;
+      this.Ekin += this.types[this.atoms[i].t].m * v2;
       
       // maximum velocity and acceleration
       vmax = Math.max( vmax, v2 );
       amax = Math.max( amax, this.atoms[i].f.len2()/(0.25*m*m) );
     }
-    this.T /= 2.0; // Vector.dim
+    this.Ekin /= 2.0; // Vector.dim
     
     // calculate pressure (PV=NkBT-this.vir)
-    this.P = ( this.T -this.vir ) / ( this.ss.vol() );
+    this.P = ( this.Ekin -this.vir ) / ( this.ss.vol() );
     
     // 3/2*N*kB*T = 1/2*sum(m*v^2) (2/2NkT in 2d?)
-    this.T = this.T/(this.atoms.length); // *1/kB
+    this.T = this.Ekin/(this.atoms.length); // *1/kB
 
     // increase step counters
     this.step++;
@@ -326,7 +380,7 @@ function initJSMD(dim) {
   // simple scaling thermostat
   function computeThermostat( options ) {
     return function(store) {
-      var dT, i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.T0 - this.T ) );
+      var dEkin, i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.T0 - this.T ) );
 
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {
@@ -334,12 +388,13 @@ function initJSMD(dim) {
       }
       
       // new temperature
-      dT = this.T;
+      dEkin = this.Ekin;
       this.T *= l*l;
-      sT = this.T - dT;
+      this.Ekin *= l*l;
+      dEkin = this.Ekin - dT;
       
       // work performed by the barostat on the system (negative values indicate energy removed from the system)
-      this.work.thermostat += dT * this.atoms.length;
+      this.work.thermostat += dEkin;
     }
   }
   
@@ -686,6 +741,7 @@ function initJSMD(dim) {
 
     compute : {
       forces : computeForces,
+      energy : computeEnergy,
       verlet1 : computeVerlet1,
       verlet2 : computeVerlet2,
       bounce : computeBounce,

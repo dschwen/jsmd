@@ -391,7 +391,7 @@ function initJSMD(dim) {
       dEkin = this.Ekin;
       this.T *= l*l;
       this.Ekin *= l*l;
-      dEkin = this.Ekin - dT;
+      dEkin = this.Ekin - dEkin;
       
       // work performed by the barostat on the system (negative values indicate energy removed from the system)
       this.work.thermostat += dEkin;

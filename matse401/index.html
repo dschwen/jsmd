@@ -211,9 +211,10 @@
           <div><i>P = <span id="showP"></span></i> pressure units</div>
         </div>
       </div>
-      <div class="box right" id="logbox" style="display: none">
+      <div class="box right" id="logbox" style="display: none; position: relative">
         <textarea id="log" style="height: 300px" class="width100" wrap="off"></textarea>
         <button onclick="$('#logbox').hide(400)">Ok</button>
+        <a style="position: absolute; right:1em" id="logdl" target="data" download="data.txt" href="">Download data..</a>
       </div>
       <div id="plotbox" class="box right">
         <div id="plot" style="width: 100%; height: 450px;"></div>
@@ -234,7 +235,7 @@
           showT = $('#showT'),
           showP = $('#showP'),
           render3d, stopAnim, stopCompute, ploton = false,
-          compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
+          compOpt = { samples: 40, equilibrate: 20, loopSteps: 1 }, 
           pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(0,0,0.2), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
           tabs;
@@ -442,7 +443,7 @@
       var runningAverage = {
         buffer : [],
         index : 0,
-        _num : 10,
+        _num : 20,
         addPoint: function() {
           this.buffer[this.index++] = { P: sim.P, T: sim.T }
           if( this.index >= this._num ) {
@@ -533,8 +534,15 @@
       }
 
       function getRawData(tables) {
-        var i, text = "";
+        var i,c1,c2, text = "";
         if(tables) {
+          text +=  '#column1: ' + $('#plottypeX option:selected').text() + '\n';
+          text +=  '#column2: ' + $('#plottypeY option:selected').text() + '\n';
+          c1 =  $('#plottypeX option:selected').val();
+          c2 =  $('#plottypeY option:selected').val();
+          for( i = 0; i < tabs[0].length; ++i ) {
+            text += tabs[c1][i] + ' ' + tabs[c2][i] + '\n';
+          }
         } else {
           switch( $('#datatype option:selected').val() ) {
             case "pos" :
@@ -552,6 +560,7 @@
           }
         }
         logp[0].value = text;
+        $('#logdl').attr( 'href', 'data:text/csv;base64,' + base64enc(text) );
         $('#logbox').show(400);
       }
 
@@ -729,7 +738,33 @@
         $(sel).find('.radiooff').has('input:radio:checked').addClass('radioon').removeClass('radiooff');
       }
 
+      // http://www.webtoolkit.info/javascript-base64.html
+      function base64enc(input) {
+        var output = "",
+            keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+            chr1, chr2, chr3, enc1, enc2, enc3, enc4,
+            i = 0;
 
+        while (i < input.length) {
+          chr1 = input.charCodeAt(i++);
+          chr2 = input.charCodeAt(i++);
+          chr3 = input.charCodeAt(i++);
+
+          enc1 = chr1 >> 2;
+          enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+          enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+          enc4 = chr3 & 63;
+
+          if (isNaN(chr2)) {
+                          enc3 = enc4 = 64;
+          } else if (isNaN(chr3)) {
+                          enc4 = 64;
+          }
+          output += keyStr.charAt(enc1) + keyStr.charAt(enc2) +
+                    keyStr.charAt(enc3) + keyStr.charAt(enc4);
+        }
+        return output;
+      }
     </script>
   </body>
 </html>

@@ -148,9 +148,12 @@
 -->
         <div class="box green">
           <input id="ploton" type="checkbox" onclick="ploton=this.checked">
-          <label for="ploton">Gather and plot data</label><br/>
+          <label for="ploton">Gather and plot data</label>
+          <button onclick="addPoint(); replot()">Plot</button>
+          <button onclick="clearTabs(); replot()">Clear</button>
+          <br/>
           Plot 
-          <select id="plottypeY">
+          <select id="plottypeY" onchange="replot()">
             <option value="0" selected>Temperatue</option>
             <option value="1">Work performed by piston (atomic)</option>
             <option value="2">Work performed by piston (p dV)</option>
@@ -162,7 +165,7 @@
             <option value="8">Simulation time</option>
           </select>
           vs. 
-          <select id="plottypeX">
+          <select id="plottypeX" onchange="replot()">
             <option value="0">Temperatue</option>
             <option value="1">Work performed by piston (atomic)</option>
             <option value="2">Work performed by piston (p dV)</option>
@@ -230,7 +233,7 @@
           compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
           pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(0,0,0.2), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
-          tabs = [ [],[],[],[],[],[],[],[],[] ];
+          tabs;
 
       // initialization code
       $(function() {
@@ -243,6 +246,9 @@
         
         // start animations for boundary condition selection
         bcvis.start();
+        
+        // initialize plotting data tables
+        clearTabs();
       });
 
       function gostep(n1,n2) {
@@ -417,11 +423,66 @@
         }
       }
 
+      var runningAverage = {
+        buffer : [],
+        index : 0,
+        _num : 10,
+        addPoint: function() {
+          buffer[index] = { P: sim.P, T: sim.T }
+        },
+        average: function() {
+          // TODO, count backwards from current index and stop if undefined!
+          var i, a = { P: 0.0, T: 0.0 }, c = 0;
+          for( i = 0; i < buffer.length && i < _num; ++i ) {
+            a.P += buffer.P;
+            a.T += buffer.T;
+            c++;
+          }
+          a.P /= c;
+          a.T /= c;
+          return a;
+        }
+      }
+      function clearTabs() {
+        tabs = [ [],[],[],[],[],[],[],[],[] ];
+      }
+      function addPoint() {
+        var l = tabs[0].length;
+        // TODO: SoA to AoS transformation
+        tabs[0].push(T);
+        tabs[1].push(pistonOpt.U);
+        tabs[2].push(pistonOpt.PdV);
+        tabs[3].push(Q);
+        tabs[4].push( (l>0) ? (Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) : 0 );
+        tabs[5].push(sim.ss.vol());
+        tabs[6].push(P);
+        tabs[7].push(sim.step);
+        tabs[8].push(sim.time);
+        rcount = 0;
+      }
+      function replot() {
+        var px = $('#plottypeX option:selected').val(),
+            py = $('#plottypeY option:selected').val(), i, pd =[];
+        for( i = 0; i <= tabs[0].length; ++i ) {
+          pd.push( [ tabs[px][i], tabs[py][i] ] );
+        }
+        $.plot( $('#plot'), 
+          [ { 
+            data: pd, 
+            color : 'rgb(200,0,0)' 
+          } ],
+          {
+            xaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeX option:selected').text() },
+            yaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeY option:selected').text() }
+          }
+        );
+      }
+      
       function startCompute() {
         var handler, count = 0, rcount = 0;
 
         setInterval( function() {
-          var it, l;
+          var it;
         
           for( it = 0; it < compOpt.loopSteps; ++it ) {
             sim.run(2);
@@ -429,6 +490,7 @@
             P += sim.P;
             T += sim.T;
             if( count > compOpt.samples ) {
+              // TODO running average using history table
               P = Math.round(10000*P/count)/10000;
               T = Math.round(10000*T/count)/10000;
               showP.text(P);
@@ -436,34 +498,8 @@
               count = 0;
               rcount++;
               if( ploton && rcount > compOpt.equilibrate ) {
-                l = tabs[0].length;
-                tabs[0].push(T);
-                tabs[1].push(pistonOpt.U);
-                tabs[2].push(pistonOpt.PdV);
-                tabs[3].push(Q);
-                tabs[4].push( (l>0) ? (Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) : 0 );
-                tabs[5].push(sim.ss.vol());
-                tabs[6].push(P);
-                tabs[7].push(sim.step);
-                tabs[8].push(sim.time);
-
-                var px = $('#plottypeX option:selected').val(),
-                    py = $('#plottypeY option:selected').val(), i, pd =[];
-                for( i = 0; i <= l; ++i ) {
-                  pd.push( [ tabs[px][i], tabs[py][i] ] );
-                }
-                $.plot( $('#plot'), 
-                  [ { 
-                    data: pd, 
-                    color : 'rgb(200,0,0)' 
-//                     label : $('#plottype option:selected').text() 
-                  } ],
-                  {
-                    xaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeX option:selected').text() },
-                    yaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeY option:selected').text() }
-                  }
-                );
-                rcount = 0;
+                addPoint();
+                replot();
                 //Q += heat();
               }
               P = 0.0;

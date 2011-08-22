@@ -357,7 +357,7 @@
                 }
                 break;
               case 'nano' :
-                var r = $('#npradius').val(), r2=r*r, half;
+                var r = parseFloat($('#npradius').val()), r2=r*r, half;
                 ss = r*8.0; 
                 sv = new jsmd.Vector(ss,ss,ss);
                 half = jsmd.Vector.scale(sv,0.5);
@@ -385,10 +385,10 @@
                 }
                 break;
               case 'gas' :
-                var num = $('#sgnum').val(),
-                    temp = $('#sgtemp').val() * jsmd.constants.kB,
+                var num = parseInt($('#sgnum').val()),
+                    temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
                     i,w,x1,x2,v2 = 0.0,gr=[];
-                ss = $('#sglen').val();
+                ss = parseFloat($('#sglen').val());
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
 
@@ -398,12 +398,13 @@
                   if( n%2 == 0 ) {
                     for( i = 0; i<3; ++i ) {
                       do {
-                              x1 = 2.0 * Math.random() - 1.0;
-                              x2 = 2.0 * Math.random() - 1.0;
-                              w = x1 * x1 + x2 * x2;
+                        x1 = 2.0 * Math.random() - 1.0;
+                        x2 = 2.0 * Math.random() - 1.0;
+                        w = x1 * x1 + x2 * x2;
                       } while ( w >= 1.0 );
 
-                      w = Math.sqrt( (-2.0 * Math.log( w ) ) / w ); // TODO: consider mass in a two atom gas!
+                      // TODO: consider mass in a two atom gas!
+                      w = Math.sqrt( (-2.0 * Math.log( w ) ) / w ); 
                       gr[2*i] = x1 * w;
                       gr[2*i+1] = x2 * w;
                     }
@@ -419,7 +420,7 @@
                 }
 
                 // rescale to desired temperature
-                w = Math.sqrt( sim.atoms.length * 3.0 * temp / v2  );
+                w = Math.sqrt( num * 3.0 * temp / v2  );
                 for( n = 0; n < num; ++n ) {
                   sim.atoms[n].v.scale(w);
                 }

@@ -2,6 +2,11 @@ function initJSMD(dim) {
   // depending on which vector class was loaded
   var Vector, Linkcell, Neighborlist;
             
+  // helper function to determine if a number is "bad"
+  function badNumber(a) {
+    return isNaN(a) || (a==Infinity) || (-a==Infinity);
+  }
+
   // Atom constructor
   function Atom(x,y,z) {
     this.p = new Vector(x,y,z); // y may be 'undefined' if x is a vector!
@@ -362,6 +367,9 @@ function initJSMD(dim) {
     return function(store) {
       var dV, i, l = ( 1.0 - this.dt/options.tau * ( options.P0 - this.P ) );
 
+      // trap illegal scale settings
+      if( badNumber(l) ) { return; }
+
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {
         this.atoms[i].p.scale(l);
@@ -387,6 +395,9 @@ function initJSMD(dim) {
     return function(store) {
       var i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.P0 - this.P ) );
 
+      // trap illegal scale settings
+      if( badNumber(l) ) { return; }
+
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {
         this.atoms[i].v.scale(l);
@@ -406,6 +417,9 @@ function initJSMD(dim) {
   function computeThermostat( options ) {
     return function(store) {
       var dEkin, i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.T0 - this.T ) );
+
+      // trap illegal scale settings
+      if( badNumber(l) ) { return; }
 
       // scale atomic coordinates
       for( i = 0; i < this.atoms.length; ++i ) {

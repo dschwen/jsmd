@@ -24,6 +24,8 @@
       div.box { border: 1px solid gray; margin: 0.2em; padding: 0.2em; }
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
+      div.optional { display: none }
+      div.helptext { display: none }
 
       #step1,#step2,#step3 {
         border: 1px dotted blue;
@@ -169,6 +171,12 @@
           <label for="baro">Activate barostat</label><br/>
           P<sub>0</sub>=<input type="number" value="0.0" onchange="baropt.P0=this.value"/>
           &tau;=<input type="number" value="100.0" onchange="baropt.tau=this.value"/>
+          <div class="optional">
+          </div>
+          <div class="helptext">
+            A barostat controls the <i>pressure</i> in the simulation cell. Pressure is lowered by expanding the cell and increased by shrinking the cell.
+            JSMD implements a <a href="http://www.pages.drexel.edu/~cfa22/msim/node37.html">Berenden barostat</a>.
+          </div>
         </div>
 
         <div class="box">
@@ -372,7 +380,7 @@
 
       // w and w/o barostat
       var baropt = { P0: 0.0, tau: 100.0 },
-          barostat = jsmd.compute.berendsenP( baropt ),
+          barostat,
           thermopt = { T0: 0.5, tau: 0.1 },
           thermostat = jsmd.compute.thermostat( thermopt );
 

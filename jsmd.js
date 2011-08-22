@@ -312,6 +312,21 @@ function initJSMD(dim) {
     }
   }
 
+  // weird temperature scaling _barostat_
+  function computeTemperatureBarostat( options ) {
+    return function(store) {
+      var i, l = Math.sqrt( 1.0 + this.dt/options.tau * ( options.P0 - this.P ) );
+
+      // scale atomic coordinates
+      for( i = 0; i < this.atoms.length; ++i ) {
+        this.atoms[i].v.scale(l);
+      }
+      
+      // new temperature
+      this.T *= l*l;
+    }
+  }
+  
   // simple scaling thermostat
   function computeThermostat( options ) {
     return function(store) {
@@ -627,6 +642,7 @@ function initJSMD(dim) {
       wrap : computeWrap,
       update : computeUpdate,
       berendsenP: computeBerendsenP,
+      berendsenP2: computeTemperatureBarostat,
       thermostat: computeThermostat
     },
     render : {

@@ -165,8 +165,10 @@
         </div>
 -->
         <div class="box green">
-          <input id="ploton" type="checkbox" onclick="ploton=this.checked">
-          <label for="ploton">Gather and plot data</label>
+          <input id="gatheron" type="checkbox" onclick="gatheron=this.checked">
+          <label for="gatheron">Gather data</label>
+          <input id="ploton" type="checkbox" onclick="ploton=this.checked" checked>
+          <label for="ploton">Autorefresh plot</label>
           <button onclick="addPoint(); replot()">Plot</button>
           <button onclick="clearTabs(); replot()">Clear</button>
           <br/>
@@ -272,7 +274,7 @@
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
-          render3d, stopAnim, stopCompute, ploton = false,
+          render3d, stopAnim, stopCompute, ploton = true, gatheron = false,
           compOpt = { samples: 40, equilibrate: 20, loopSteps: 1 }, 
           pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(0,0,0.2), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
@@ -575,7 +577,15 @@
         }
       }
       function clearTabs() {
+        // clear gathered data
         tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
+
+        // reset work counters for thermo, barostat, and add heat
+        if( sim ) {
+          sim.work.thermostat = 0.0;
+          sim.work.barostat = 0.0;
+          sim.work.heat = 0.0;
+        }
       }
       function addPoint() {
         var l = tabs[0].length;
@@ -635,9 +645,9 @@
               showT.text(Math.round( 10000 * ( averages.T / jsmd.constants.kB ) )/10000);
               count = 0;
               rcount++;
-              if( ploton && rcount > compOpt.equilibrate ) {
+              if( gatheron && rcount > compOpt.equilibrate ) {
                 addPoint();
-                replot();
+                if( ploton ) { replot(); }
               }
             }
           }

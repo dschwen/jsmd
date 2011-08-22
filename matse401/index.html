@@ -69,7 +69,7 @@
     <div id="step1">
       <h1>Sample geometry</h1>
       <p>Select a sample geometry and boundary conditions.</p>
-      <div style="width: 45%; float: left">
+      <div style="width: 48%; float: left">
       	<div class="box radioon">
           <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step1')" checked id="sam_fcc"/> 
           <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
@@ -78,17 +78,17 @@
       	<div class="box radiooff">
           <input value="nano" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_nano"/> 
           <label for="sam_nano"><b>Nano particle</b></label></br>
-          $r=$ <input type="number" value="3" id="npradius"/> (radius)
+          $r=$ <input type="number" value="3" id="npradius"/> &Aring; (radius)
       	</div>
       	<div class="box radiooff">
           <input value="gas" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_gas"/> 
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
-          $T=$ <input type="number" value="1.0" id="sgtemp"/> (temperature)<br/>
-          $L=$ <input type="number" value="40.0" id="sglen"/> (box size, $V=L^3$)<br/>
+          $T=$ <input type="number" value="100.0" id="sgtemp"/> K (temperature)<br/>
+          $L=$ <input type="number" value="40.0" id="sglen"/> &Aring; (box size, $V=L^3$)<br/>
       	</div>
       </div>
-      <div style="width: 45%; float: right">
+      <div style="width: 48%; float: right">
       	<div class="box radioon">
           <input value="period" type="radio" name="boundary" onchange="updateRadios('#step1')" checked id="bc_period"/> 
           <label for="bc_period"><b>Periodic boundaries</b></label></br>
@@ -120,9 +120,9 @@
         <p>\[ 
             V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
         \]</p>
-        $\varepsilon=$ <input type="number" value="1.0" id="ljepsilon"/> (binding energy)<br/>
-        $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
-        $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+        $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
+        $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
+        $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
       </div>
       <button onclick="gostep(2,1)">Back</button>
       <button onclick="gostep(2,3)">Next</button>
@@ -142,9 +142,9 @@
         <div id="pistonbox" class="box">
           <input id="piston" type="checkbox" onclick="pistonOpt.on=this.checked">
           <label for="piston">Move piston</label><br/>
-          max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
-          min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/><br/>
-          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  />
+          max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/> &Aring;,
+          min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/> &Aring; <br/>
+          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  /> &Aring;/fs
           <button onclick="pistonOpt.sv.z *=-1; $('#pistonvz').val(pistonOpt.sv.z)">Reverse</button>
         </div>
 <!--
@@ -167,31 +167,35 @@
           <br/>
           Plot 
           <select id="plottypeY" onchange="replot()">
-            <option value="0" selected>Temperatue</option>
+            <option value="0" selected>Temperatue [K]</option>
             <option value="1">Work performed by piston (atomic)</option>
             <option value="2">Work performed by piston (p dV)</option>
             <option value="3">Added heat</option>
             <option value="4">Heatcapacity</option>
-            <option value="5">Volume</option>
-            <option value="6">Pressure</option>
+            <option value="5">Volume [Ang&sup3;]</option>
+            <option value="6">Pressure [MPa]</option>
             <option value="7">Simulation step</option>
-            <option value="8">Simulation time</option>
-            <option value="9">Work performed by thermostat</option>
+            <option value="8">Simulation time [fs]</option>
+            <option value="9">Heat input by thermostat</option>
             <option value="10">Work performed by barostat</option>
+            <option value="11">Thermostat settemperature [K]</option>
+            <option value="12">Barostat setpressure [MPa]</option>
           </select>
           vs. 
           <select id="plottypeX" onchange="replot()">
-            <option value="0">Temperatue</option>
-            <option value="1">Work performed by piston (atomic)</option>
-            <option value="2">Work performed by piston (p dV)</option>
-            <option value="3">Added heat</option>
+            <option value="0">Temperatue [K]</option>
+            <option value="1">Work performed by piston (atomic) [eV]</option>
+            <option value="2">Work performed by piston (p dV) [eV]</option>
+            <option value="3">Added heat [K]</option>
             <option value="4">Heatcapacity</option>
-            <option value="5">Volume</option>
-            <option value="6" selected>Pressure</option>
+            <option value="5">Volume [Ang&sup3;]</option>
+            <option value="6" selected>Pressure [MPa]</option>
             <option value="7">Simulation step</option>
-            <option value="8">Simulation time</option>
-            <option value="9">Work performed by thermostat</option>
-            <option value="10">Work performed by barostat</option>
+            <option value="8">Simulation time [fs]</option>
+            <option value="9">Heat input by thermostat [K]</option>
+            <option value="10">Work performed by barostat [eV]</option>
+            <option value="11">Thermostat settemperature [K]</option>
+            <option value="12">Barostat setpressure [MPa]</option>
           </select>
           <button onclick="getRawData(true)">Get data</button>
         </div>
@@ -199,12 +203,15 @@
         <div class="box">
           <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
           <label for="baro">Activate barostat (affecting <span id="baroaffect"></span>)</label><br/>
-          P<sub>0</sub>=<input type="number" id="barop0" value="0.0" onchange="baropt.P0=this.value"/>
-          &tau;=<input type="number" value="100.0" onchange="baropt.tau=this.value"/>
+          P<sub>0</sub>=<input type="number" id="barop0" value="0.0" 
+                               onchange="baropt.P0=parseFloat(this.value)/jsmd.constants.MPa"/> MPa,
+          &tau;=<input type="number" value="100.0" onchange="baropt.tau=parseFloat(this.value)"/> fs
           <div class="optional">
-            <input id="baroramp" type="checkbox" onclick="baropt.ramp=this.checked">
+            <input id="baroramp" type="checkbox" 
+                   onclick="baropt.ramp=this.checked; $('#barop0').attr('disabled', baropt.ramp);">
             <label for="baroramp">ramp barostat setpressure</label><br/>
-            $\frac{dP_0}{dt}$</sub>=<input type="number" value="0.01" onchange="baropt.dP0dt=this.value"/>
+            $\frac{dP_0}{dt}$</sub>=<input type="number" value="0.01" step="0.01" 
+                                           onchange="baropt.dP0dt=parseFloat(this.value)/jsmd.constants.MPa"/> MPa/fs
           </div>
           <div class="helptext">
             A barostat controls the <i>pressure</i> in the simulation cell. Pressure is lowered by expanding the cell and increased by shrinking the cell.
@@ -215,12 +222,13 @@
         <div class="box">
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
-          T<sub>0</sub>=<input type="number" id="thermt0" value="0.5" step="0.1" onchange="thermopt.T0=this.value"/>
-          &tau;=<input type="number" value="0.1" step="0.1" onchange="thermopt.tau=this.value"/>
+          T<sub>0</sub>=<input type="number" id="thermt0" value="10" step="1" onchange="thermopt.T0=parseFloat(this.value)*jsmd.constants.kB"/> K,
+          &tau;=<input type="number" value="0.1" step="0.1" onchange="thermopt.tau=parseFloat(this.value)"/> fs
           <div class="optional">
-            <input id="thermramp" type="checkbox" onclick="thermopt.ramp=this.checked">
-            <label for="thermramp">ramp thermostat settemperatue</label><br/>
-            $\frac{dT_0}{dt}$</sub>=<input type="number" value="0.01" onchange="thermopt.dT0dt=this.value"/>
+            <input id="thermramp" type="checkbox" 
+                   onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
+            <label for="thermramp">ramp thermostat settemperature</label><br/>
+            $\frac{dT_0}{dt}$</sub>=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
           </div>
         </div>
 
@@ -234,8 +242,8 @@
         </div>
 
         <div class="box blue">
-          <div><i>T = <span id="showT"></span></i> energy units</div>
-          <div><i>P = <span id="showP"></span></i> pressure units</div>
+          <div><i>T = <span id="showT"></span></i> K</div>
+          <div><i>P = <span id="showP"></span></i> MPa</div>
         </div>
       </div>
       <div class="box right" id="logbox" style="display: none; position: relative">
@@ -374,7 +382,7 @@
                 break;
               case 'gas' :
                 var num = $('#sgnum').val(),
-                    temp = $('#sgtemp').val(),
+                    temp = $('#sgtemp').val() * jsmd.constants.kB,
                     i,w,x1,x2,v2 = 0.0,gr=[];
                 ss = $('#sglen').val();
                 sv = new jsmd.Vector(ss,ss,ss);
@@ -407,7 +415,7 @@
                 }
 
                 // rescale to desired temperature
-                w = Math.sqrt( sim.atoms.length * temp / (0.5 * v2 ) );
+                w = Math.sqrt( sim.atoms.length * 3.0 * temp / v2  );
                 for( n = 0; n < num; ++n ) {
                   sim.atoms[n].v.scale(w);
                 }
@@ -464,8 +472,12 @@
                 break;
 
               case 'lj' : 
+                // get and convert parameters
+                var sigma = parseFloat($('#ljsigma').val()) ,
+                    epsilon = parseFloat($('#ljepsilon').val()) * jsmd.constants.kB;
+
                 // tabulate the potential with all default options
-                force = jsmd.potential.tabulated( jsmd.potential.lennardJones(1.295, 1.0) );
+                force = jsmd.potential.tabulated( jsmd.potential.lennardJones( sigma, epsilon ) );
 
                 // set interaction matrix (1x1)
                 sim.computeChain[2] = jsmd.compute.forces;
@@ -505,7 +517,7 @@
       // w and w/o barostat
       var baropt = { P0: 0.0, tau: 100.0, ramp: false, dP0dt: 0.01 },
           barostat,
-          thermopt = { T0: 0.5, tau: 0.1, ramp: false, dT0dt: 0.01 },
+          thermopt = { T0: 10.0, tau: 0.1, ramp: false, dT0dt: 0.5 },
           thermostat = jsmd.compute.thermostat( thermopt );
 
       function startAnim() {
@@ -561,22 +573,24 @@
         }
       }
       function clearTabs() {
-        tabs = [ [],[],[],[],[],[],[],[],[],[],[] ];
+        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[] ];
       }
       function addPoint() {
         var l = tabs[0].length;
         // TODO: SoA to AoS transformation
-        tabs[0].push(averages.T);
-        tabs[1].push(pistonOpt.U);
-        tabs[2].push(pistonOpt.PdV);
-        tabs[3].push(sim.work.heat);
+        tabs[0].push( averages.T / jsmd.constants.kB );
+        tabs[1].push( pistonOpt.U * jsmd.constants.eV );
+        tabs[2].push( pistonOpt.PdV * jsmd.constants.eV );
+        tabs[3].push( sim.work.heat / jsmd.constants.kB );
         tabs[4].push( (l>0) ? (sim.work.heat-tabs[3][l-1])/(averages.T-tabs[0][l-1]) : 0 );
         tabs[5].push(sim.ss.vol());
-        tabs[6].push(averages.P);
+        tabs[6].push( averages.P * jsmd.constants.MPa );
         tabs[7].push(sim.step);
         tabs[8].push(sim.time);
-        tabs[9].push(sim.work.thermostat);
-        tabs[10].push(sim.work.barostat);
+        tabs[9].push( sim.work.thermostat / jsmd.constants.kB );
+        tabs[10].push( sim.work.barostat * jsmd.constants.eV );
+        tabs[11].push( thermopt.T0 / jsmd.constants.kB );
+        tabs[12].push( baropt.P0 * jsmd.constants.MPa );
         rcount = 0;
       }
       function replot() {
@@ -609,13 +623,13 @@
             runningAverage.addPoint();
             if( count > compOpt.samples ) {
               // update thermo and barostat settings
-              if( thermopt.ramp ) { $('#thermt0').val( thermopt.T0 ); }
-              if( baropt.ramp ) { $('#barop0').val( baropt.P0 ); }
+              if( thermopt.ramp ) { $('#thermt0').val( thermopt.T0 / jsmd.constants.kB ); }
+              if( baropt.ramp ) { $('#barop0').val( baropt.P0 * jsmd.constants.MPa ); }
 
               // get running average using history table
               averages = runningAverage.average();
-              showP.text(Math.round(10000*averages.P)/10000);
-              showT.text(Math.round(10000*averages.T)/10000);
+              showP.text(Math.round( 10000 * ( averages.P * jsmd.constants.MPa ) )/10000);
+              showT.text(Math.round( 10000 * ( averages.T / jsmd.constants.kB ) )/10000);
               count = 0;
               rcount++;
               if( ploton && rcount > compOpt.equilibrate ) {

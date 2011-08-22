@@ -7,6 +7,36 @@ function initJSMD(dim) {
     return isNaN(a) || (a==Infinity) || (-a==Infinity);
   }
 
+  /* units
+   * 
+   * base:
+   * length : Angstroms = 10^-10m
+   * time   : fs = 10^-12s
+   * mass   : u = 1.660538921(73)×10^-27 kg
+   * 
+   * derived:
+   * energy      : EU = 1.660538921e-23 J = 1.0364269849e-4 eV
+   * temperature : EU = 1.202722312087 K
+   * pressure    : PU = 1.660538921e7 Pa
+   */
+
+  // useful constants
+  var constants = {
+    kB : 1.0/1.202722312087, // EU/K 
+    eV : 1.0364269849e-4,    // eV/EU
+    Pa : 1.660538921e7,      // Pa/PU
+    MPa : 1.660538921e1      // MPa/PU
+  }
+  
+  // unit conversion functions
+  function energy2eV(E) {
+    // 1J = 6.24150974×10^18 eV
+    return E*constants.eV;
+  }
+  function energy2K(E) {
+    return E/constants.kB;
+  }
+  
   // Atom constructor
   function Atom(x,y,z) {
     this.p = new Vector(x,y,z); // y may be 'undefined' if x is a vector!
@@ -111,9 +141,9 @@ function initJSMD(dim) {
     
     // store the virial here (for pressure calculation)
     this.vir = 0.0;
-    // instantaneous temperature 
+    // instantaneous temperature [EU]
     this.T = 0.0;
-    // instantaneous pressure
+    // instantaneous pressure [PU]
     this.P = 0.0;
     
     // kinetic energy (updated every integration step)
@@ -216,7 +246,7 @@ function initJSMD(dim) {
     }
     
     // virial (1/3.0 in 3d, 1/2.0 in 2d)
-    this.vir /= 2.0;
+    this.vir /= dim;
   }
 
   function computeEnergy(store) {
@@ -347,10 +377,10 @@ function initJSMD(dim) {
     this.Ekin /= 2.0; // Vector.dim
     
     // calculate pressure (PV=NkBT-this.vir)
-    this.P = ( this.Ekin -this.vir ) / ( this.ss.vol() );
+    this.P = ( this.Ekin - this.vir ) / ( this.ss.vol() );
     
     // 3/2*N*kB*T = 1/2*sum(m*v^2) (2/2NkT in 2d?)
-    this.T = this.Ekin/(this.atoms.length); // *1/kB
+    this.T = 2.0/3.0*this.Ekin/(this.atoms.length);
 
     // increase step counters
     this.step++;
@@ -817,6 +847,7 @@ function initJSMD(dim) {
       lennardJones : potentialLJ,
       morse : potentialMorse,
       tabulated: potentialTabulated
-    }
+    },
+    constants : constants
   };
 };

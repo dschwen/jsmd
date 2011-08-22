@@ -10,7 +10,6 @@
     <script type="text/javascript" src="../jsmd.js"></script>
     <script type="text/javascript" src="../lib/Three.js"></script>
     <script type="text/javascript" src="../lib/jquery.pack.js"></script>
-    <script type="text/javascript" src="../lib/jquery.flot.min.js"></script>
     <script src="../lib/MathJax/MathJax.js">
       MathJax.Hub.Config({
         extensions: ["tex2jax.js","TeX/bbox.js"],
@@ -21,12 +20,36 @@
       });
     </script>
     <style>
-      div.box { border: 1px solid gray; margin: 0.2em; padding: 0.2em; }
+      div.box { 
+        border: 1px solid gray; margin: 5px; padding: 5px;
+        -moz-box-shadow: 5px 5px 5px #ccc;
+        -webkit-box-shadow: 5px 5px 5px #ccc;
+        box-shadow: 5px 5px 5px #ccc;
+      }
+      .right { margin-left: 510px !important }
+
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
       div.optional { display: none }
       div.helptext { display: none }
 
+      div.vertdrag {
+        padding-top: 4px;
+        width: 30%;
+        height: 4px;
+        background-color: #777777;
+        margin-left: auto;
+        margin-right: auto;
+        cursor: s-resize;
+      }
+
+      .width100 {
+        width: 100%;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+      }
+      
       #step1,#step2,#step3 {
         border: 1px dotted blue;
         background-color: #eeeeee;
@@ -62,6 +85,7 @@
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="1.0" id="sgtemp"/> (temperature)<br/>
+          $L=$ <input type="number" value="40.0" id="sglen"/> (box size, $V=L^3$)<br/>
       	</div>
       </div>
       <div style="width: 45%; float: right">
@@ -107,21 +131,20 @@
     <!-- Step 3: run stuff -->
     <div id="step3">
       <h1>Simulation</h1>
-      <div id="simcan"></div>
-      <div id="plot" style="width: 500px; height: 450px; float: right"></div>
-      <div style="width: 500px">
+      <div class="box" style="height: 600px" id="simcan"></div>
+      <div style="width: 500px; float: left">
         <div class="box green">
           <button onclick="heat()">Add heat</button>
           <button onclick="cool()">Remove heat</button>
           <button onclick="addvac()">Add vacancy</button><br/>
         </div>
 
-        <div class="box">
+        <div id="pistonbox" class="box">
           <input id="piston" type="checkbox" onclick="pistonOpt.on=this.checked">
           <label for="piston">Move piston</label><br/>
           max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
           min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/><br/>
-          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" onchange="pistonOpt.sv.z=this.value"  />
+          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  />
           <button onclick="pistonOpt.sv.z *=-1; $('#pistonvz').val(pistonOpt.sv.z)">Reverse</button>
         </div>
 <!--
@@ -138,59 +161,74 @@
 -->
         <div class="box green">
           <input id="ploton" type="checkbox" onclick="ploton=this.checked">
-          <label for="ploton">Gather and plot data</label><br/>
+          <label for="ploton">Gather and plot data</label>
+          <button onclick="addPoint(); replot()">Plot</button>
+          <button onclick="clearTabs(); replot()">Clear</button>
+          <br/>
           Plot 
-          <select id="plottypeY">
+          <select id="plottypeY" onchange="replot()">
             <option value="0" selected>Temperatue</option>
             <option value="1">Work performed by piston (atomic)</option>
             <option value="2">Work performed by piston (p dV)</option>
             <option value="3">Added heat</option>
             <option value="4">Heatcapacity</option>
             <option value="5">Volume</option>
-            <option value="6">Presure</option>
+            <option value="6">Pressure</option>
             <option value="7">Simulation step</option>
             <option value="8">Simulation time</option>
+            <option value="9">Work performed by thermostat</option>
+            <option value="10">Work performed by barostat</option>
           </select>
           vs. 
-          <select id="plottypeX">
+          <select id="plottypeX" onchange="replot()">
             <option value="0">Temperatue</option>
             <option value="1">Work performed by piston (atomic)</option>
             <option value="2">Work performed by piston (p dV)</option>
             <option value="3">Added heat</option>
             <option value="4">Heatcapacity</option>
             <option value="5">Volume</option>
-            <option value="6" selected>Presure</option>
+            <option value="6" selected>Pressure</option>
             <option value="7">Simulation step</option>
             <option value="8">Simulation time</option>
+            <option value="9">Work performed by thermostat</option>
+            <option value="10">Work performed by barostat</option>
           </select>
           <button onclick="getRawData(true)">Get data</button>
         </div>
 
         <div class="box">
           <input id="baro" type="checkbox" onclick="sim.computeChain[4] = this.checked ? barostat : null">
-          <label for="baro">Activate barostat</label><br/>
-          P<sub>0</sub>=<input type="number" value="0.0" onchange="baropt.P0=this.value"/>
+          <label for="baro">Activate barostat (affecting <span id="baroaffect"></span>)</label><br/>
+          P<sub>0</sub>=<input type="number" id="barop0" value="0.0" onchange="baropt.P0=this.value"/>
           &tau;=<input type="number" value="100.0" onchange="baropt.tau=this.value"/>
           <div class="optional">
+            <input id="baroramp" type="checkbox" onclick="baropt.ramp=this.checked">
+            <label for="baroramp">ramp barostat setpressure</label><br/>
+            $\frac{dP_0}{dt}$</sub>=<input type="number" value="0.01" onchange="baropt.dP0dt=this.value"/>
           </div>
           <div class="helptext">
             A barostat controls the <i>pressure</i> in the simulation cell. Pressure is lowered by expanding the cell and increased by shrinking the cell.
-            JSMD implements a <a href="http://www.pages.drexel.edu/~cfa22/msim/node37.html">Berenden barostat</a>.
+            JSMD implements a <a href="http://www.pages.drexel.edu/~cfa22/msim/node37.html">Berendsen barostat</a>.
           </div>
         </div>
 
         <div class="box">
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
-          T<sub>0</sub>=<input type="number" value="0.5" onchange="thermopt.T0=this.value"/>
+          T<sub>0</sub>=<input type="number" id="thermt0" value="0.5" step="0.1" onchange="thermopt.T0=this.value"/>
           &tau;=<input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
+          <div class="optional">
+            <input id="thermramp" type="checkbox" onclick="thermopt.ramp=this.checked">
+            <label for="thermramp">ramp thermostat settemperatue</label><br/>
+            $\frac{dT_0}{dt}$</sub>=<input type="number" value="0.01" onchange="thermopt.dT0dt=this.value"/>
+          </div>
         </div>
 
         <div class="box green">
           Get raw data for
           <select id="datatype">
-            <option value="0">Atom velocities</option>
-            <option value="1">Atom positions</option>
+            <option value="vel">Atom velocities</option>
+            <option value="pos">Atom positions</option>
           </select>
           <button onclick="getRawData(false)">Go</button>
         </div>
@@ -200,8 +238,16 @@
           <div><i>P = <span id="showP"></span></i> pressure units</div>
         </div>
       </div>
-
-      <div style="width: 50%; height: 200px; overflow:scroll; border: 1px solid gray; display: none"><pre id="log"></pre></div>
+      <div class="box right" id="logbox" style="display: none; position: relative">
+        <textarea id="log" style="height: 300px" class="width100" wrap="off"></textarea>
+        <button onclick="$('#logbox').hide(400)">Ok</button>
+        <a style="position: absolute; right:1em" id="logdl" target="data" download="data.txt" href="">Download data..</a>
+      </div>
+      <div id="plotbox" class="box right">
+        <div id="plot" style="width: 100%; height: 450px;"></div>
+        <div class="vertdrag" id="plotresize"></div>
+      </div>
+      <br style="clear: both"/>
       <button onclick="gostep(3,2)">Back</button>
     </div>
 
@@ -212,15 +258,15 @@
           sc = $('#simcan'),
           sim, force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
-          T = 0.0, P = 0.0, Q = 0.0, rup = false,
+          averages = {}, rup = false,
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
           render3d, stopAnim, stopCompute, ploton = false,
-          compOpt = { samples: 10, equilibrate: 20, loopSteps: 1 }, 
+          compOpt = { samples: 40, equilibrate: 20, loopSteps: 1 }, 
           pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(0,0,0.2), on: false, U: 0.0, PdV: 0.0 },
           reqAnim = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame,
-          tabs = [ [],[],[],[],[],[],[],[],[] ];
+          tabs;
 
       // initialization code
       $(function() {
@@ -233,10 +279,42 @@
         
         // start animations for boundary condition selection
         bcvis.start();
+        
+        // initialize plotting data tables
+        clearTabs();
+
+        // make plot resizable
+        var oy;
+        function doResizing(e) {
+          if( e.clientY != oy ) {
+            var h = $('#plot').height();
+            $('#plot').height(h+e.clientY-oy);
+            oy = e.clientY;
+          }
+        }
+        function doneResizing(e) {
+          $(document).unbind( 'mousemove', doResizing ); 
+          $(document).unbind( 'mouseup', doneResizing ); 
+          replot(); 
+        } 
+        $('#plotresize')
+          .mousedown( function(e) 
+          { 
+            oy = e.clientY; 
+            $(document).bind( 'mousemove', doResizing ).bind('mouseup', doneResizing ); 
+          } );
+
+        // add logic to show .optional on hover
+        $('.optional').each( function(i,e) {
+          $(e).parent()
+            .mouseenter( function(){ $(e).stop(false,true).show(400); } )
+            .mouseleave( function(){ $(e).stop(false,true).hide(400); } )
+        } );
       });
 
       function gostep(n1,n2) {
-        var x,y,z,n;
+        var x,y,z,n,p = new jsmd.Vector(),
+            fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
         $('#step'+n1).hide(400);
         switch( n1 ) {
           case 1: 
@@ -248,7 +326,6 @@
                 sim = new jsmd.Simulation(sv);
 
                 // insert atoms
-                var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
                 for( x = 0; x < ss/2; ++x ) {
                   for( y = 0; y < ss/2; ++y ) {
                     for( z = 0; z < ss/2; ++z ) {
@@ -268,18 +345,42 @@
                 }
                 break;
               case 'nano' :
-                var r = $('#npradius').val();
-                ss = r*4.0; 
+                var r = $('#npradius').val(), r2=r*r, half;
+                ss = r*8.0; 
                 sv = new jsmd.Vector(ss,ss,ss);
+                half = jsmd.Vector.scale(sv,0.5);
                 sim = new jsmd.Simulation(sv);
+                // insert atoms
+                for( x = -ss/4; x < ss/4; ++x ) {
+                  for( y = -ss/4; y < ss/4; ++y ) {
+                    for( z = -ss/4; z < ss/4; ++z ) {
+                      for( n = 0; n < 4; ++n ) {
+                        p.x = (2*x+fcc[n][0])+0.5;
+                        p.y = (2*y+fcc[n][1])+0.5;
+                        p.z = (2*z+fcc[n][2])+0.5;
+                        if( p.len2() <= r2 ) {
+                          p.add(half)
+                          a = new jsmd.Atom(p);
+                          a.p.wrap(sv);
+                          a.v.x = 0.5*(Math.random()-0.5);
+                          a.v.y = 0.5*(Math.random()-0.5);
+                          a.v.z = 0.5*(Math.random()-0.5);
+                          sim.atoms.push(a);
+                        }
+                      }   
+                    }
+                  }
+                }
                 break;
               case 'gas' :
                 var num = $('#sgnum').val(),
                     temp = $('#sgtemp').val(),
-                    i,w,x1,x2,gr=[];
-                ss = 40;
+                    i,w,x1,x2,v2 = 0.0,gr=[];
+                ss = $('#sglen').val();
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
+
+                // assign gaussian distributed velocities
                 for( n = 0; n < num; ++n ) {
                   // fill gaussian random number reservoir
                   if( n%2 == 0 ) {
@@ -290,7 +391,7 @@
                               w = x1 * x1 + x2 * x2;
                       } while ( w >= 1.0 );
 
-                      w = Math.sqrt( temp * (-2.0 * Math.log( w ) ) / w );
+                      w = Math.sqrt( (-2.0 * Math.log( w ) ) / w ); // TODO: consider mass in a two atom gas!
                       gr[2*i] = x1 * w;
                       gr[2*i+1] = x2 * w;
                     }
@@ -301,13 +402,23 @@
                   a.v.x = gr[(n%2)*3];
                   a.v.y = gr[(n%2)*3+1];
                   a.v.z = gr[(n%2)*3+2];
+                  v2 += a.v.len2() * 1.0; // TODO: mass assumed to be 1.0
                   sim.atoms.push(a);
+                }
+
+                // rescale to desired temperature
+                w = Math.sqrt( sim.atoms.length * temp / (0.5 * v2 ) );
+                for( n = 0; n < num; ++n ) {
+                  sim.atoms[n].v.scale(w);
                 }
                 break;
             }
             t = new jsmd.AtomType();
             t.r = 0.25;
             sim.types.push(t);
+
+            // add entry for heat influx/outflux
+            sim.work.heat = 0.0;
 
             // set compute chain
             sim.computeChain = [ 
@@ -324,12 +435,25 @@
             $('#simcan').empty();
 
             // initialize render3d (container must not be hidden!)
-            var newcon = $('<div></div>').css('height','600px');
-            $('body').append(newcon);
-            render3d = initRender3D( sim, newcon[0] );
-            $('#simcan').append(newcon);
-
+            $('#step3').css( { display: "block", visibility: "hidden" } )
+            render3d = initRender3D( sim, $('#simcan')[0] );
+            $('#step3').css( { display: "none", visibility: "visible" } )
+      
+            // stop little animations
             bcvis.stop();
+
+            // show/hide pistion box depending on BC
+            if( $('input:radio[name=boundary]:checked').val() == 'period' ) {
+              $('#pistonbox').hide();
+              pistonOpt.on=false;
+              barostat = jsmd.compute.berendsenP( baropt );
+              $('#baroaffect').text('volume');
+            } else {
+              $('#pistonbox').show();
+              pistonOpt.on=$('#piston')[0].checked;
+              barostat = jsmd.compute.berendsenP2( baropt );
+              $('#baroaffect').text('temperature');
+            }
             break;
           case 2:
             switch( $('input:radio[name=potential]:checked').val() ) {
@@ -341,7 +465,7 @@
 
               case 'lj' : 
                 // tabulate the potential with all default options
-                force = jsmd.force.tabulated( jsmd.force.lennardJones(1.295, 1.0) );
+                force = jsmd.potential.tabulated( jsmd.potential.lennardJones(1.295, 1.0) );
 
                 // set interaction matrix (1x1)
                 sim.computeChain[2] = jsmd.compute.forces;
@@ -379,9 +503,9 @@
 
 
       // w and w/o barostat
-      var baropt = { P0: 0.0, tau: 100.0 },
+      var baropt = { P0: 0.0, tau: 100.0, ramp: false, dP0dt: 0.01 },
           barostat,
-          thermopt = { T0: 0.5, tau: 0.1 },
+          thermopt = { T0: 0.5, tau: 0.1, ramp: false, dT0dt: 0.01 },
           thermostat = jsmd.compute.thermostat( thermopt );
 
       function startAnim() {
@@ -408,51 +532,96 @@
         }
       }
 
+      var runningAverage = {
+        buffer : [],
+        index : 0,
+        _num : 20,
+        addPoint: function() {
+          this.buffer[this.index++] = { P: sim.P, T: sim.T }
+          if( this.index >= this._num ) {
+            this.index = 0;
+          }
+        },
+        average: function() {
+          var i, a = { P: 0.0, T: 0.0 }, c = 0;
+          for( i = 0; i < this.buffer.length && i < this._num; ++i ) {
+            a.P += this.buffer[i].P;
+            a.T += this.buffer[i].T;
+            c++;
+          }
+          a.P /= c;
+          a.T /= c;
+          return a;
+        },
+        setNum: function(num) {
+          this.buffer = [];
+          this.index = 0;
+          this._num = num;
+          this.addPoint();
+        }
+      }
+      function clearTabs() {
+        tabs = [ [],[],[],[],[],[],[],[],[],[],[] ];
+      }
+      function addPoint() {
+        var l = tabs[0].length;
+        // TODO: SoA to AoS transformation
+        tabs[0].push(averages.T);
+        tabs[1].push(pistonOpt.U);
+        tabs[2].push(pistonOpt.PdV);
+        tabs[3].push(sim.work.heat);
+        tabs[4].push( (l>0) ? (sim.work.heat-tabs[3][l-1])/(averages.T-tabs[0][l-1]) : 0 );
+        tabs[5].push(sim.ss.vol());
+        tabs[6].push(averages.P);
+        tabs[7].push(sim.step);
+        tabs[8].push(sim.time);
+        tabs[9].push(sim.work.thermostat);
+        tabs[10].push(sim.work.barostat);
+        rcount = 0;
+      }
+      function replot() {
+        var px = $('#plottypeX option:selected').val(),
+            py = $('#plottypeY option:selected').val(), i, pd =[];
+        for( i = 0; i <= tabs[0].length; ++i ) {
+          pd.push( [ tabs[px][i], tabs[py][i] ] );
+        }
+        $.plot( $('#plot'), 
+          [ { 
+            data: pd, 
+            color : 'rgb(200,0,0)' 
+          } ],
+          {
+            xaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeX option:selected').text() },
+            yaxis : { axisLabelUseCanvas: false, axisLabel: $('#plottypeY option:selected').text() }
+          }
+        );
+      }
+      
       function startCompute() {
         var handler, count = 0, rcount = 0;
 
         setInterval( function() {
-          var it, l;
+          var it;
         
           for( it = 0; it < compOpt.loopSteps; ++it ) {
             sim.run(2);
             count++;
-            P += sim.P;
-            T += sim.T;
+            runningAverage.addPoint();
             if( count > compOpt.samples ) {
-              P = Math.round(10000*P/count)/10000;
-              T = Math.round(10000*T/count)/10000;
-              showP.text(P);
-              showT.text(T);
+              // update thermo and barostat settings
+              if( thermopt.ramp ) { $('#thermt0').val( thermopt.T0 ); }
+              if( baropt.ramp ) { $('#barop0').val( baropt.P0 ); }
+
+              // get running average using history table
+              averages = runningAverage.average();
+              showP.text(Math.round(10000*averages.P)/10000);
+              showT.text(Math.round(10000*averages.T)/10000);
               count = 0;
               rcount++;
               if( ploton && rcount > compOpt.equilibrate ) {
-                l = tabs[0].length;
-                tabs[0].push(T);
-                tabs[1].push(pistonOpt.U);
-                tabs[2].push(pistonOpt.PdV);
-                tabs[3].push(Q);
-                tabs[4].push( (l>0) ? (Q-tabs[0][l-1][0])/(T-tabs[0][l-1][1]) : 0 );
-                tabs[5].push(sim.ss.vol());
-                tabs[6].push(P);
-                tabs[7].push(sim.step);
-                tabs[8].push(sim.time);
-
-                var px = $('#plottypeX option:selected').val(),
-                    py = $('#plottypeY option:selected').val(), i, pd =[];
-                for( i = 0; i <= l; ++i ) {
-                  pd.push( [ tabs[px][i], tabs[py][i] ] );
-                }
-                $.plot( $('#plot'), [ { 
-                  data: pd, 
-                  color : 'rgb(200,0,0)', 
-                  label : $('#plottype option:selected').text() 
-                } ] );
-                rcount = 0;
-                //Q += heat();
+                addPoint();
+                replot();
               }
-              P = 0.0;
-              T = 0.0;
             }
           }
         }, 1000/50 );
@@ -460,17 +629,34 @@
       }
 
       function getRawData(tables) {
-        var i;
+        var i,c1,c2, text = "";
         if(tables) {
+          text +=  '#column1: ' + $('#plottypeX option:selected').text() + '\n';
+          text +=  '#column2: ' + $('#plottypeY option:selected').text() + '\n';
+          c1 =  $('#plottypeX option:selected').val();
+          c2 =  $('#plottypeY option:selected').val();
+          for( i = 0; i < tabs[0].length; ++i ) {
+            text += tabs[c1][i] + ' ' + tabs[c2][i] + '\n';
+          }
         } else {
           switch( $('#datatype option:selected').val() ) {
-            case 0 :
+            case "pos" :
+              text = "# " + sim.atoms.length + " atom positions\n";
               for( i = 0; i < sim.atoms.length; ++i ) {
-
+                text += i + " " + sim.atoms[i].p.x + " " + sim.atoms[i].p.y + " " + sim.atoms[i].p.z + "\n";
+              }
+              break;
+            case "vel" :
+              text = "# " + sim.atoms.length + " atom velocities\n";
+              for( i = 0; i < sim.atoms.length; ++i ) {
+                text += i + " " + sim.atoms[i].v.x + " " + sim.atoms[i].v.y + " " + sim.atoms[i].v.z + "\n";
               }
               break;
           }
         }
+        logp[0].value = text;
+        $('#logdl').attr( 'href', 'data:text/csv;base64,' + base64enc(text) );
+        $('#logbox').show(400);
       }
 
       // add heat to the system
@@ -497,7 +683,7 @@
         }
 
         // return average energy added per atom
-        return 0.5 * ( Q + tm*cm.len2() ) / sim.atoms.length;
+        sim.work.heat += 0.5 * ( Q - tm*cm.len2() );
       }
       // remove heat from the system
       function cool() {
@@ -509,8 +695,8 @@
           Q += sim.types[a.t].m * v2;
         }
 
-        // return average energy added per atom
-        return Q/sim.atoms.length;
+        // tally average energy added per atom
+        sim.work.heat -= 0.5*Q;
       }
 
       // toggle barostat
@@ -647,7 +833,33 @@
         $(sel).find('.radiooff').has('input:radio:checked').addClass('radioon').removeClass('radiooff');
       }
 
+      // http://www.webtoolkit.info/javascript-base64.html
+      function base64enc(input) {
+        var output = "",
+            keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+            chr1, chr2, chr3, enc1, enc2, enc3, enc4,
+            i = 0;
 
+        while (i < input.length) {
+          chr1 = input.charCodeAt(i++);
+          chr2 = input.charCodeAt(i++);
+          chr3 = input.charCodeAt(i++);
+
+          enc1 = chr1 >> 2;
+          enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+          enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+          enc4 = chr3 & 63;
+
+          if (isNaN(chr2)) {
+                          enc3 = enc4 = 64;
+          } else if (isNaN(chr3)) {
+                          enc4 = 64;
+          }
+          output += keyStr.charAt(enc1) + keyStr.charAt(enc2) +
+                    keyStr.charAt(enc3) + keyStr.charAt(enc4);
+        }
+        return output;
+      }
     </script>
   </body>
 </html>

@@ -133,10 +133,15 @@
       <h1>Simulation</h1>
       <div class="box" style="height: 600px" id="simcan"></div>
       <div style="width: 500px; float: left">
-        <div class="box green">
-          <button onclick="heat()">Add heat</button>
-          <button onclick="cool()">Remove heat</button>
-          <button onclick="addvac()">Add vacancy</button><br/>
+        <div class="box blue">
+          <div><i>T = <span id="showT"></span></i> K</div>
+          <div><i>P = <span id="showP"></span></i> MPa</div>
+        </div>
+
+        <div class="box">
+          <button onclick="heat()" title="add heat and remove center of mass momentum">Add heat</button>
+          <button onclick="cool()" title="set all atom velocities to zero">Remove heat</button>
+          <button onclick="addvac()" title="remove one random atom">Add vacancy</button><br/>
         </div>
 
         <div id="pistonbox" class="box">
@@ -180,6 +185,7 @@
             <option value="10">Work performed by barostat</option>
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
+            <option value="13">Number of atoms</option>
           </select>
           vs. 
           <select id="plottypeX" onchange="replot()">
@@ -196,6 +202,7 @@
             <option value="10">Work performed by barostat [eV]</option>
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
+            <option value="13">Number of atoms</option>
           </select>
           <button onclick="getRawData(true)">Get data</button>
         </div>
@@ -239,11 +246,6 @@
             <option value="pos">Atom positions</option>
           </select>
           <button onclick="getRawData(false)">Go</button>
-        </div>
-
-        <div class="box blue">
-          <div><i>T = <span id="showT"></span></i> K</div>
-          <div><i>P = <span id="showP"></span></i> MPa</div>
         </div>
       </div>
       <div class="box right" id="logbox" style="display: none; position: relative">
@@ -573,7 +575,7 @@
         }
       }
       function clearTabs() {
-        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[] ];
+        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
       }
       function addPoint() {
         var l = tabs[0].length;
@@ -591,6 +593,7 @@
         tabs[10].push( sim.work.barostat * jsmd.constants.eV );
         tabs[11].push( thermopt.T0 / jsmd.constants.kB );
         tabs[12].push( baropt.P0 * jsmd.constants.MPa );
+        tabs[13].push( sim.atoms.length );
         rcount = 0;
       }
       function replot() {

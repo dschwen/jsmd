@@ -126,7 +126,7 @@
           <button onclick="addvac()">Add vacancy</button><br/>
         </div>
 
-        <div class="box">
+        <div id="pistonbox" class="box">
           <input id="piston" type="checkbox" onclick="pistonOpt.on=this.checked">
           <label for="piston">Move piston</label><br/>
           max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/>
@@ -257,7 +257,8 @@
       });
 
       function gostep(n1,n2) {
-        var x,y,z,n;
+        var x,y,z,n,p = new jsmd.Vector(),
+            fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
         $('#step'+n1).hide(400);
         switch( n1 ) {
           case 1: 
@@ -269,7 +270,6 @@
                 sim = new jsmd.Simulation(sv);
 
                 // insert atoms
-                var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
                 for( x = 0; x < ss/2; ++x ) {
                   for( y = 0; y < ss/2; ++y ) {
                     for( z = 0; z < ss/2; ++z ) {
@@ -289,10 +289,32 @@
                 }
                 break;
               case 'nano' :
-                var r = $('#npradius').val();
-                ss = r*4.0; 
+                var r = $('#npradius').val(), r2=r*r, half;
+                ss = r*8.0; 
                 sv = new jsmd.Vector(ss,ss,ss);
+                half = jsmd.Vector.scale(sv,0.5);
                 sim = new jsmd.Simulation(sv);
+                // insert atoms
+                for( x = -ss/4; x < ss/4; ++x ) {
+                  for( y = -ss/4; y < ss/4; ++y ) {
+                    for( z = -ss/4; z < ss/4; ++z ) {
+                      for( n = 0; n < 4; ++n ) {
+                        p.x = (2*x+fcc[n][0])+0.5;
+                        p.y = (2*y+fcc[n][1])+0.5;
+                        p.z = (2*z+fcc[n][2])+0.5;
+                        if( p.len2() <= r2 ) {
+                          p.add(half)
+                          a = new jsmd.Atom(p);
+                          a.p.wrap(sv);
+                          a.v.x = 0.5*(Math.random()-0.5);
+                          a.v.y = 0.5*(Math.random()-0.5);
+                          a.v.z = 0.5*(Math.random()-0.5);
+                          sim.atoms.push(a);
+                        }
+                      }   
+                    }
+                  }
+                }
                 break;
               case 'gas' :
                 var num = $('#sgnum').val(),
@@ -360,8 +382,18 @@
             $('#step3').css( { display: "block", visibility: "hidden" } )
             render3d = initRender3D( sim, $('#simcan')[0] );
             $('#step3').css( { display: "none", visibility: "visible" } )
-
+      
+            // stop little animations
             bcvis.stop();
+
+            // show/hide pistion box depending on BC
+            if( $('input:radio[name=boundary]:checked').val() == 'period' ) {
+              $('#pistonbox').hide();
+              pistonOpt.on=false;
+            } else {
+              $('#pistonbox').show();
+              pistonOpt.on=$('#piston')[0].checked;
+            }
             break;
           case 2:
             switch( $('input:radio[name=potential]:checked').val() ) {

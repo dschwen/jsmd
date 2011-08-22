@@ -30,7 +30,7 @@
 
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
-      div.optional { display: none }
+      div.optional { display: none; padding-top: 5px; margin-top: 5px; border-top: 1px dashed gray }
       div.helptext { display: none }
 
       div.vertdrag {
@@ -216,7 +216,7 @@
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
           T<sub>0</sub>=<input type="number" id="thermt0" value="0.5" step="0.1" onchange="thermopt.T0=this.value"/>
-          &tau;=<input type="number" value="0.1" onchange="thermopt.tau=this.value"/>
+          &tau;=<input type="number" value="0.1" step="0.1" onchange="thermopt.tau=this.value"/>
           <div class="optional">
             <input id="thermramp" type="checkbox" onclick="thermopt.ramp=this.checked">
             <label for="thermramp">ramp thermostat settemperatue</label><br/>

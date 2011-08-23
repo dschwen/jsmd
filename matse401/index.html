@@ -110,19 +110,32 @@
     <div id="step2">
       <h1>Atomic interactions</h1>
       <p>Select an interaction potential and its parameters.</p>
-      <div class="box radioon">
-        <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
-        <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
+      <div style="width: 48%; float: right">
+        <div class="box">
+          <b>Number of chemical species in the simulation</b><br/>
+          <input type="number" value="1" step="1" id="numel" onchange="updateNumEl()"/>
+          <div id="numellist">
+          </div>
+          <div id="numeltemplate" style="display: none">
+            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="http://en.wikipedia.orh/wiki/amu">amu</a> (mass)<br/>
+          </div>
+        </div>
       </div>
-      <div class="box radiooff">
-        <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
-        <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
-        <p>\[ 
-            V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
-        \]</p>
-        $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
-        $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
-        $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+      <div style="width: 48%; float: right">
+        <div class="box radioon">
+          <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
+          <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
+        </div>
+        <div class="box radiooff">
+          <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
+          <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
+          <p>\[ 
+              V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
+          \]</p>
+          $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
+          $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
+          $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+        </div>
       </div>
       <button onclick="gostep(2,1)">Back</button>
       <button onclick="gostep(2,3)">Next</button>
@@ -289,6 +302,9 @@
         // workaround for http://code.google.com/p/chromium/issues/detail?id=51836
         $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onclick=e.onchange; } } );
         
+        // open all wp links in external window
+        $('.wp').each
+
         // start animations for boundary condition selection
         bcvis.start();
         

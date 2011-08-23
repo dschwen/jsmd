@@ -113,7 +113,7 @@
       <div style="width: 48%; float: right">
         <div class="box">
           <b>Number of chemical species in the simulation</b><br/>
-          <input type="number" value="1" step="1" id="numel" onchange="updateNumEl()"/>
+          <input type="number" value="1" step="1" id="numel" disabled onchange="updateNumEl()"/>
           <div id="numellist">
           </div>
           <div id="numeltemplate" style="display: none">
@@ -121,7 +121,7 @@
           </div>
         </div>
       </div>
-      <div style="width: 48%; float: right">
+      <div style="width: 48%; float: left">
         <div class="box radioon">
           <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
           <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
@@ -137,6 +137,7 @@
           $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
         </div>
       </div>
+      <br style="clear: both"/>
       <button onclick="gostep(2,1)">Back</button>
       <button onclick="gostep(2,3)">Next</button>
     </div>
@@ -188,35 +189,37 @@
           Plot 
           <select id="plottypeY" onchange="replot()">
             <option value="0" selected>Temperatue [K]</option>
-            <option value="1">Work performed by piston (atomic)</option>
-            <option value="2">Work performed by piston (p dV)</option>
-            <option value="3">Added heat</option>
-            <option value="4">Heatcapacity</option>
-            <option value="5">Volume [Ang&sup3;]</option>
             <option value="6">Pressure [MPa]</option>
-            <option value="7">Simulation step</option>
-            <option value="8">Simulation time [fs]</option>
-            <option value="9">Heat input by thermostat</option>
-            <option value="10">Work performed by barostat</option>
+            <option value="5">Volume [Ang&sup3;]</option>
+            <option value="1">Work performed by piston (atomic) [eV]</option>
+            <option value="2">Work performed by piston (p dV) [eV]</option>
+            <option value="14">Total kinetic energy [eV]</option>
+            <!--<option value="4">Heatcapacity</option>-->
+            <option value="3">Added heat [eV]</option>
+            <option value="9">Heat input by thermostat [eV]</option>
+            <option value="10">Work performed by barostat [eV]</option>
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
+            <option value="7">Simulation step</option>
+            <option value="8">Simulation time [fs]</option>
             <option value="13">Number of atoms</option>
           </select>
           vs. 
           <select id="plottypeX" onchange="replot()">
             <option value="0">Temperatue [K]</option>
+            <option value="6" selected>Pressure [MPa]</option>
+            <option value="5">Volume [Ang&sup3;]</option>
             <option value="1">Work performed by piston (atomic) [eV]</option>
             <option value="2">Work performed by piston (p dV) [eV]</option>
-            <option value="3">Added heat [K]</option>
-            <option value="4">Heatcapacity</option>
-            <option value="5">Volume [Ang&sup3;]</option>
-            <option value="6" selected>Pressure [MPa]</option>
-            <option value="7">Simulation step</option>
-            <option value="8">Simulation time [fs]</option>
-            <option value="9">Heat input by thermostat [K]</option>
+            <option value="14">Total kinetic energy [eV]</option>
+            <!--<option value="4">Heatcapacity</option>-->
+            <option value="3">Added heat [eV]</option>
+            <option value="9">Heat input by thermostat [eV]</option>
             <option value="10">Work performed by barostat [eV]</option>
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
+            <option value="7">Simulation step</option>
+            <option value="8">Simulation time [fs]</option>
             <option value="13">Number of atoms</option>
           </select>
           <button onclick="getRawData(true)">Get data</button>
@@ -595,7 +598,7 @@
       }
       function clearTabs() {
         // clear gathered data
-        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
+        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
 
         // reset work counters for thermo, barostat, and add heat
         if( sim ) {
@@ -610,17 +613,18 @@
         tabs[0].push( averages.T / jsmd.constants.kB );
         tabs[1].push( pistonOpt.U * jsmd.constants.eV );
         tabs[2].push( pistonOpt.PdV * jsmd.constants.eV );
-        tabs[3].push( sim.work.heat / jsmd.constants.kB );
+        tabs[3].push( sim.work.heat * jsmd.constants.eV );
         tabs[4].push( (l>0) ? (sim.work.heat-tabs[3][l-1])/(averages.T-tabs[0][l-1]) : 0 );
         tabs[5].push(sim.ss.vol());
         tabs[6].push( averages.P * jsmd.constants.MPa );
         tabs[7].push(sim.step);
         tabs[8].push(sim.time);
-        tabs[9].push( sim.work.thermostat / jsmd.constants.kB );
+        tabs[9].push( sim.work.thermostat * jsmd.constants.eV );
         tabs[10].push( sim.work.barostat * jsmd.constants.eV );
         tabs[11].push( thermopt.T0 / jsmd.constants.kB );
         tabs[12].push( baropt.P0 * jsmd.constants.MPa );
         tabs[13].push( sim.atoms.length );
+        tabs[14].push( sim.Ekin * jsmd.constants.eV );
         rcount = 0;
       }
       function replot() {

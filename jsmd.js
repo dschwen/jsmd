@@ -377,7 +377,7 @@ function initJSMD(dim) {
     this.Ekin /= 2.0; // Vector.dim
     
     // calculate pressure (PV=NkBT-this.vir)
-    this.P = ( this.Ekin - this.vir ) / ( this.ss.vol() );
+    this.P = ( 2.0/3.0*this.Ekin - this.vir ) / ( this.ss.vol() );
     
     // 3/2*N*kB*T = 1/2*sum(m*v^2) (2/2NkT in 2d?)
     this.T = 2.0/3.0*this.Ekin/(this.atoms.length);

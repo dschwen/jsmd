@@ -125,7 +125,13 @@
 
     <div id="step1b">
       <b>Selected sample is too dense to enforce the chosen minimum distance!</b><br/>
-      Retry without or with smaller r<sub>min</sub>. As a workaround you can relax the system to a low temperature (press <i>remove heat</i> repeatedly) and then use a thermostat to reach the desired sample temperature.<br/>
+      Your options are:
+      <ul>
+        <li><a href="#" onclick="$('#step1b').hide(400); gostep(1,2)">Retry</a> (may help in bordeline cases)</li> 
+        <li><a href="#" onclick="$('#step1b').hide(400); $('#sglim').attr('checked',''); gostep(1,2)">Retry without enforcing minimum distance</a></li>
+        <li><a href="#" onclick="$('#step1b').hide(400); gostep(2,1)">Go back</a> and retry with smaller r<sub>min</sub></li>
+      </li>
+      As a workaround you can also attempt to continue and relax the system to a low temperature (press <i>remove heat</i> repeatedly) and then use a thermostat to reach the desired sample temperature.<br/>
       <button onclick="$('#step1b').hide(400)">Dismiss</button>
     </div>
 
@@ -435,7 +441,7 @@
                 var num = parseInt($('#sgnum').val()),
                     temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
                     rmin = parseFloat($('#sgminr').val()),
-                    limit = $('#sglim').val(),
+                    limit = $('#sglim').attr('checked'),
                     i,w,x1,x2,v2 = 0.0,gr=[];
                 ss = parseFloat($('#sglen').val());
                 sv = new jsmd.Vector(ss,ss,ss);

@@ -205,6 +205,9 @@
           min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/> &Aring; <br/>
           v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  /> &Aring;/fs
           <button onclick="pistonOpt.sv.z *=-1; $('#pistonvz').val(pistonOpt.sv.z)">Reverse</button>
+          <div class="helptext">
+            The <i>piston</i> is implemented by moving the two box walls perpendicular to the z-axis inward with a velocity of v<sub>z</sub> (negative v<sub>z</sub> move the walls apart). The wall is assumed to have infinite mass and reflected particles will exhibit a momentum transfer, adding 2v<sub>z</sub> to their velocity z-component.
+          </div>
         </div>
 <!--
         <div class="box">
@@ -228,7 +231,7 @@
           <br/>
           Plot 
           <select id="plottypeY" onchange="replot()">
-            <option value="0" selected>Temperatue [K]</option>
+            <option value="0" selected>Temperature [K]</option>
             <option value="6">Pressure [MPa]</option>
             <option value="5">Volume [Ang&sup3;]</option>
             <option value="1">Work performed by piston (atomic) [eV]</option>
@@ -246,7 +249,7 @@
           </select>
           vs. 
           <select id="plottypeX" onchange="replot()">
-            <option value="0">Temperatue [K]</option>
+            <option value="0">Temperature [K]</option>
             <option value="6" selected>Pressure [MPa]</option>
             <option value="5">Volume [Ang&sup3;]</option>
             <option value="1">Work performed by piston (atomic) [eV]</option>
@@ -280,7 +283,7 @@
           </div>
           <div class="helptext">
             A barostat controls the <i>pressure</i> in the simulation cell. Pressure is lowered by expanding the cell and increased by shrinking the cell.
-            JSMD implements a <a href="http://www.pages.drexel.edu/~cfa22/msim/node37.html">Berendsen barostat</a>.
+            jsMD implements a <a href="http://www.pages.drexel.edu/~cfa22/msim/node37.html">Berendsen barostat</a>.
           </div>
         </div>
 
@@ -294,6 +297,9 @@
                    onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
             <label for="thermramp">ramp thermostat settemperature</label><br/>
             $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
+          </div>
+          <div class="helptext">
+            A thermostat controls the <i>temperature</i> in the simulation cell. jsMD implements a <a href="http://en.wikipedia.org/wiki/Berendsen_thermostat">Berendsen thermostat</a> that regulates temperature through simple velocity rescaling.
           </div>
         </div>
 

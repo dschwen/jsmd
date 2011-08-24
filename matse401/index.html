@@ -22,6 +22,7 @@
     <style>
       div.box { 
         border: 1px solid gray; margin: 5px; padding: 5px;
+        position: relative;
         -moz-box-shadow: 5px 5px 5px #ccc;
         -webkit-box-shadow: 5px 5px 5px #ccc;
         box-shadow: 5px 5px 5px #ccc;
@@ -30,8 +31,22 @@
 
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
-      div.optional { display: none; padding-top: 5px; margin-top: 5px; border-top: 1px dashed gray }
-      div.helptext { display: none }
+      div.optional { 
+        display: none; 
+        position: relative;
+        padding-top: 5px; 
+        margin-top: 5px; 
+        border-top: 1px dashed gray; 
+      }
+      div.helptext { 
+        display: none;
+        padding: 5px;
+        font-size: 90%;
+      }
+      a.wp { 
+        color: black;
+        text-decoration: none;
+      }
 
       div.vertdrag {
         padding-top: 4px;
@@ -50,12 +65,13 @@
         box-sizing: border-box;
       }
       
-      #step1,#step2,#step3 {
+      #step1,#step1b,#step2,#step3 {
         border: 1px dotted blue;
         background-color: #eeeeee;
         padding: 0.5em;
       }
       h1 { font-family: sans; }
+      #step1b { display: none; border-color: red; margin-bottom: 5px; }
       #step2 { display: none }
       #step3 { display: none }
   
@@ -86,6 +102,18 @@
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="100.0" id="sgtemp"/> K (temperature)<br/>
           $L=$ <input type="number" value="40.0" id="sglen"/> &Aring; (box size, $V=L^3$)<br/>
+          <div class="optional">
+            <input id="sglim" type="checkbox" checked>
+            <label for="sglim">enforce minimum separation distance for initial state</label><br/>
+            r<sub>min</sub>=<input id="sgminr" type="number" value="1.4" step="0.1"/> Ang<br/>
+            <div class="helptext">
+              The gas atoms are placed at random positions in the simulation box. 
+              If an interaction potential is used, a small fraction of neighboring 
+              atoms may be very close and thus in the repulsive regime of the 
+              potential. These atoms will repell eachother vigorously and accellerate 
+              very fast. This is undesired and can be avoided by checking this option.
+            </div>
+          </div>
       	</div>
       </div>
       <div style="width: 48%; float: right">
@@ -106,24 +134,50 @@
       <button onclick="gostep(1,2)" onmouseover="$('#step1').find('.optional').stop(true)">Next</button>
     </div>               
 
+    <div id="step1b">
+      <b>Selected sample is too dense to enforce the chosen minimum distance!</b><br/>
+      Your options are:
+      <ul>
+        <li><a href="#" onclick="$('#step1b').hide(400); gostep(1,2)">Retry</a> (may help in bordeline cases)</li> 
+        <li><a href="#" onclick="$('#step1b').hide(400); $('#sglim').attr('checked',''); gostep(1,2)">Retry without enforcing minimum distance</a></li>
+        <li><a href="#" onclick="$('#step1b').hide(400); gostep(2,1)">Go back</a> and retry with smaller r<sub>min</sub></li>
+      </li>
+      As a workaround you can also attempt to continue and relax the system to a low temperature (press <i>remove heat</i> repeatedly) and then use a thermostat to reach the desired sample temperature.<br/>
+      <button onclick="$('#step1b').hide(400)">Dismiss</button>
+    </div>
+
     <!-- Step 2: choose interaction potential -->
     <div id="step2">
       <h1>Atomic interactions</h1>
       <p>Select an interaction potential and its parameters.</p>
-      <div class="box radioon">
-        <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
-        <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
+      <div style="width: 38%; float: right">
+        <div class="box">
+          <b>Number of chemical species in the simulation</b><br/>
+          <input type="number" value="1" step="1" id="numel" disabled onchange="updateNumEl()"/>
+          <div id="numellist">
+          </div>
+          <div id="numeltemplate" style="display: none">
+            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a> (mass)<br/>
+          </div>
+        </div>
       </div>
-      <div class="box radiooff">
-        <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
-        <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
-        <p>\[ 
-            V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
-        \]</p>
-        $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
-        $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
-        $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+      <div style="width: 58%; float: left">
+        <div class="box radioon">
+          <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
+          <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
+        </div>
+        <div class="box radiooff">
+          <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
+          <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
+          <p>\[ 
+              V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
+          \]</p>
+          $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
+          $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
+          $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+        </div>
       </div>
+      <br style="clear: both"/>
       <button onclick="gostep(2,1)">Back</button>
       <button onclick="gostep(2,3)">Next</button>
     </div>
@@ -134,8 +188,8 @@
       <div class="box" style="height: 600px" id="simcan"></div>
       <div style="width: 500px; float: left">
         <div class="box blue">
-          <div><i>T = <span id="showT"></span></i> K</div>
-          <div><i>P = <span id="showP"></span></i> MPa</div>
+          <div><i><a class="wp" href="Temperature">T = </a><span id="showT"></span></i> <a class="wp" href="Kelvin">K</a></div>
+          <div><i><a class="wp" href="Pressure">P = </a><span id="showP"></span></i> <a class="wp" href="Pascal_(unit)">MPa</a></div>
         </div>
 
         <div class="box">
@@ -175,35 +229,37 @@
           Plot 
           <select id="plottypeY" onchange="replot()">
             <option value="0" selected>Temperatue [K]</option>
-            <option value="1">Work performed by piston (atomic)</option>
-            <option value="2">Work performed by piston (p dV)</option>
-            <option value="3">Added heat</option>
-            <option value="4">Heatcapacity</option>
-            <option value="5">Volume [Ang&sup3;]</option>
             <option value="6">Pressure [MPa]</option>
-            <option value="7">Simulation step</option>
-            <option value="8">Simulation time [fs]</option>
-            <option value="9">Heat input by thermostat</option>
-            <option value="10">Work performed by barostat</option>
+            <option value="5">Volume [Ang&sup3;]</option>
+            <option value="1">Work performed by piston (atomic) [eV]</option>
+            <option value="2">Work performed by piston (p dV) [eV]</option>
+            <option value="14">Total kinetic energy [eV]</option>
+            <!--<option value="4">Heatcapacity</option>-->
+            <option value="3">Added heat [eV]</option>
+            <option value="9">Heat input by thermostat [eV]</option>
+            <option value="10">Work performed by barostat [eV]</option>
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
+            <option value="7">Simulation step</option>
+            <option value="8">Simulation time [fs]</option>
             <option value="13">Number of atoms</option>
           </select>
           vs. 
           <select id="plottypeX" onchange="replot()">
             <option value="0">Temperatue [K]</option>
+            <option value="6" selected>Pressure [MPa]</option>
+            <option value="5">Volume [Ang&sup3;]</option>
             <option value="1">Work performed by piston (atomic) [eV]</option>
             <option value="2">Work performed by piston (p dV) [eV]</option>
-            <option value="3">Added heat [K]</option>
-            <option value="4">Heatcapacity</option>
-            <option value="5">Volume [Ang&sup3;]</option>
-            <option value="6" selected>Pressure [MPa]</option>
-            <option value="7">Simulation step</option>
-            <option value="8">Simulation time [fs]</option>
-            <option value="9">Heat input by thermostat [K]</option>
+            <option value="14">Total kinetic energy [eV]</option>
+            <!--<option value="4">Heatcapacity</option>-->
+            <option value="3">Added heat [eV]</option>
+            <option value="9">Heat input by thermostat [eV]</option>
             <option value="10">Work performed by barostat [eV]</option>
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
+            <option value="7">Simulation step</option>
+            <option value="8">Simulation time [fs]</option>
             <option value="13">Number of atoms</option>
           </select>
           <button onclick="getRawData(true)">Get data</button>
@@ -219,7 +275,7 @@
             <input id="baroramp" type="checkbox" 
                    onclick="baropt.ramp=this.checked; $('#barop0').attr('disabled', baropt.ramp);">
             <label for="baroramp">ramp barostat setpressure</label><br/>
-            $\frac{dP_0}{dt}$</sub>=<input type="number" value="0.01" step="0.01" 
+            $\frac{dP_0}{dt}$=<input type="number" value="0.01" step="0.01" 
                                            onchange="baropt.dP0dt=parseFloat(this.value)/jsmd.constants.MPa"/> MPa/fs
           </div>
           <div class="helptext">
@@ -237,7 +293,7 @@
             <input id="thermramp" type="checkbox" 
                    onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
             <label for="thermramp">ramp thermostat settemperature</label><br/>
-            $\frac{dT_0}{dt}$</sub>=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
+            $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
           </div>
         </div>
 
@@ -289,6 +345,28 @@
         // workaround for http://code.google.com/p/chromium/issues/detail?id=51836
         $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onclick=e.onchange; } } );
         
+        // open all wp links in external window
+        $('a.wp').each( function(i,e) { 
+          $(e).attr( { 
+            target: 'wp', 
+            href: 'http://en.wikipedia.org/wiki/'+$(e).attr('href') 
+          } ); 
+        } );
+
+        // wire-up all help boxes
+        $('div.helptext').each( function(i,e) {
+          $(e).parent().append( 
+            $('<img src="gtk-info.svg">')
+              .css( { 
+                position: 'absolute', 
+                top: '3px', right: '3px',
+                cursor: 'pointer'
+              } )
+              .attr( 'title', 'Toggle help' )
+              .toggle( function() { $(e).show() }, function() { $(e).hide() } ) 
+          );
+        } );
+
         // start animations for boundary condition selection
         bcvis.start();
         
@@ -319,8 +397,8 @@
         // add logic to show .optional on hover
         $('.optional').each( function(i,e) {
           $(e).parent()
-            .mouseenter( function(){ $(e).stop(false,true).show(400); } )
-            .mouseleave( function(){ $(e).stop(false,true).hide(400); } )
+            .mouseenter( function(){ $(e).stop(true,true).delay(500).show(400); } )
+            .mouseleave( function(){ $(e).stop(true,true).delay(500).hide(400); } )
         } );
       });
 
@@ -387,10 +465,42 @@
               case 'gas' :
                 var num = parseInt($('#sgnum').val()),
                     temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
+                    rmin = parseFloat($('#sgminr').val()),
+                    limit = $('#sglim').attr('checked'),
                     i,w,x1,x2,v2 = 0.0,gr=[];
                 ss = parseFloat($('#sglen').val());
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
+
+                // create and position atoms
+                for( n = 0; n < num; ++n ) {
+                  // create atom at random position
+                  a = new jsmd.Atom( jsmd.Vector.random(sv) );
+                  sim.atoms.push(a);
+                }
+
+                // make sure none are closer than rmin
+                if( limit ) {
+                  sim.setCutOff(rmin,0.0);
+                  var dirty, attempt = 1;
+                  do {
+                    if( attempt > 40 ) {
+                      $('#step1b').show(400);
+                      break;
+                    }
+                    sim.nl.update();
+                    dirty = false;
+                    // reposition all atoms that have a non-empty neighbor list (=too close)
+                    for( n = 0; n < num; ++n ) {
+                      if( sim.nl.data[n].length > 0 ) {
+                        sim.atoms[n].p.random(sv);
+                        dirty = true;
+                      }
+                    }
+                    attempt++;
+                  } while(dirty);
+                  //$('#step1b').hide(400);
+                }
 
                 // assign gaussian distributed velocities
                 for( n = 0; n < num; ++n ) {
@@ -411,12 +521,11 @@
                   }
                      
                   // create atom at random position, with gaussian velocity distribution
-                  a = new jsmd.Atom( jsmd.Vector.random(sv) );
+                  a = sim.atoms[n];
                   a.v.x = gr[(n%2)*3];
                   a.v.y = gr[(n%2)*3+1];
                   a.v.z = gr[(n%2)*3+2];
                   v2 += a.v.len2() * 1.0; // TODO: mass assumed to be 1.0
-                  sim.atoms.push(a);
                 }
 
                 // rescale to desired temperature
@@ -469,6 +578,7 @@
             }
             break;
           case 2:
+            $('#step1b').hide(400);
             switch( $('input:radio[name=potential]:checked').val() ) {
               case 'none' : 
                 // set cut-off
@@ -490,6 +600,7 @@
 
                 // set cut-off
                 sim.setCutOff(3.5,0.5);
+
                 break;
             }
             sim.nl.update();
@@ -579,7 +690,7 @@
       }
       function clearTabs() {
         // clear gathered data
-        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
+        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
 
         // reset work counters for thermo, barostat, and add heat
         if( sim ) {
@@ -594,17 +705,18 @@
         tabs[0].push( averages.T / jsmd.constants.kB );
         tabs[1].push( pistonOpt.U * jsmd.constants.eV );
         tabs[2].push( pistonOpt.PdV * jsmd.constants.eV );
-        tabs[3].push( sim.work.heat / jsmd.constants.kB );
+        tabs[3].push( sim.work.heat * jsmd.constants.eV );
         tabs[4].push( (l>0) ? (sim.work.heat-tabs[3][l-1])/(averages.T-tabs[0][l-1]) : 0 );
         tabs[5].push(sim.ss.vol());
         tabs[6].push( averages.P * jsmd.constants.MPa );
         tabs[7].push(sim.step);
         tabs[8].push(sim.time);
-        tabs[9].push( sim.work.thermostat / jsmd.constants.kB );
+        tabs[9].push( sim.work.thermostat * jsmd.constants.eV );
         tabs[10].push( sim.work.barostat * jsmd.constants.eV );
         tabs[11].push( thermopt.T0 / jsmd.constants.kB );
         tabs[12].push( baropt.P0 * jsmd.constants.MPa );
         tabs[13].push( sim.atoms.length );
+        tabs[14].push( sim.Ekin * jsmd.constants.eV );
         rcount = 0;
       }
       function replot() {

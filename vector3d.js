@@ -116,4 +116,9 @@ Vector3d.prototype.set = function(a) {
 Vector3d.random = function(ss) {
   return new Vector3d( Math.random()*ss.x, Math.random()*ss.y, Math.random()*ss.z );
 }
+Vector3d.prototype.random = function(ss) {
+  this.x = Math.random()*ss.x;
+  this.y = Math.random()*ss.y;
+  this.z = Math.random()*ss.z;
+}
 

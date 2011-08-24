@@ -101,3 +101,8 @@ Vector2d.prototype.set = function(a) {
 Vector2d.random = function(ss) {
   return new Vector2d( Math.random()*ss.x, Math.random()*ss.y );
 }
+Vector3d.prototype.random = function(ss) {
+  this.x = Math.random()*ss.x;
+  this.y = Math.random()*ss.y;
+}
+

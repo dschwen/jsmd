@@ -32,6 +32,10 @@
       div.blue { background-color: #aaaaff }
       div.optional { display: none; padding-top: 5px; margin-top: 5px; border-top: 1px dashed gray }
       div.helptext { display: none }
+      a.wp { 
+        color: black;
+        text-decoration: none;
+      }
 
       div.vertdrag {
         padding-top: 4px;
@@ -129,7 +133,7 @@
           <div id="numellist">
           </div>
           <div id="numeltemplate" style="display: none">
-            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="http://en.wikipedia.orh/wiki/Atomic_mass_unit">amu</a> (mass)<br/>
+            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a> (mass)<br/>
           </div>
         </div>
       </div>
@@ -160,8 +164,8 @@
       <div class="box" style="height: 600px" id="simcan"></div>
       <div style="width: 500px; float: left">
         <div class="box blue">
-          <div><i>T = <span id="showT"></span></i> K</div>
-          <div><i>P = <span id="showP"></span></i> MPa</div>
+          <div><i><a class="wp" href="Temperature">T = </a><span id="showT"></span></i> <a class="wp" href="Kelvin">K</a></div>
+          <div><i><a class="wp" href="Pressure">P = </a><span id="showP"></span></i> <a class="wp" href="Pascal_(unit)">MPa</a></div>
         </div>
 
         <div class="box">
@@ -318,7 +322,12 @@
         $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onclick=e.onchange; } } );
         
         // open all wp links in external window
-        $('a.wp').each( function(i,e) { $(e).attr('target','wp'); } );
+        $('a.wp').each( function(i,e) { 
+          $(e).attr( { 
+            target: 'wp', 
+            href: 'http://en.wikipedia.org/wiki/'+$(e).attr('href') 
+          } ); 
+        } );
 
         // start animations for boundary condition selection
         bcvis.start();
@@ -350,8 +359,8 @@
         // add logic to show .optional on hover
         $('.optional').each( function(i,e) {
           $(e).parent()
-            .mouseenter( function(){ $(e).stop(false,true).show(400); } )
-            .mouseleave( function(){ $(e).stop(false,true).hide(400); } )
+            .mouseenter( function(){ $(e).stop(true,true).delay(500).show(400); } )
+            .mouseleave( function(){ $(e).stop(true,true).delay(500).hide(400); } )
         } );
       });
 

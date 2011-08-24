@@ -72,6 +72,7 @@
       }
       h1 { font-family: sans; }
       #step1b { display: none; border-color: red; margin-bottom: 5px; }
+      #matrixbox { display: none }
       #step2 { display: none }
       #step3 { display: none }
   
@@ -153,15 +154,19 @@
       <div style="width: 38%; float: right">
         <div class="box">
           <b>Number of chemical species in the simulation</b><br/>
-          <input type="number" value="1" step="1" id="numel" disabled onchange="updateNumEl()"/>
+          <input type="number" value="1" step="1" id="numel" onchange="updateNumEl()"/>
           <div id="numellist">
           </div>
           <div id="numeltemplate" style="display: none">
             m<sub></sub>=<input type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a> (mass)<br/>
           </div>
         </div>
+        <div class="box" id="matrixbox">
+          <b>Nothing to see here - move along!</b>
+          <iframe width="420" height="345" src="http://www.youtube.com/embed/5NNOrp_83RU" frameborder="0" allowfullscreen></iframe>
+        </div>
       </div>
-      <div style="width: 58%; float: left">
+      <div style="width: 58%; float: left" id="potentialform">
         <div class="box radioon">
           <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
           <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
@@ -974,6 +979,16 @@
         return { start: step, stop: function() { clearTimeout(handler); } }
       })();
 
+      function updateNumEl() {
+        var numel = $('#numel').val();
+        if( numel == 1 ) {
+          $('#matrixbox').hide(400);
+        } else {
+          // update interaction matrix widget
+          $('#matrixbox').show(400);
+        }
+      }
+      
       function updateRadios(sel) {
         $(sel).find('.radioon').addClass('radiooff').removeClass('radioon');
         $(sel).find('.radiooff').has('input:radio:checked').addClass('radioon').removeClass('radiooff');

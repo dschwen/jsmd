@@ -86,6 +86,18 @@
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="100.0" id="sgtemp"/> K (temperature)<br/>
           $L=$ <input type="number" value="40.0" id="sglen"/> &Aring; (box size, $V=L^3$)<br/>
+          <div class="optional">
+            <input id="sglim" type="checkbox" checked>
+            <label for="sglim">enforce minimum separation distance for initial state</label><br/>
+            r<sub>min</sub>=<input id="sgminr" type="number" value="1.4" step="0.1"/> Ang<br/>
+            <div class="helptext">
+              The gas atoms are placed at random positions in the simulation box. 
+              If an interaction potential is used, a small fraction of neighboring 
+              atoms may be very close and thus in the repulsive regime of the 
+              potential. These atoms will repell eachother vigorously and accellerate 
+              very fast. This is undesired and can be avoided by checking this option.
+            </div>
+          </div>
       	</div>
       </div>
       <div style="width: 48%; float: right">
@@ -110,18 +122,18 @@
     <div id="step2">
       <h1>Atomic interactions</h1>
       <p>Select an interaction potential and its parameters.</p>
-      <div style="width: 48%; float: right">
+      <div style="width: 38%; float: right">
         <div class="box">
           <b>Number of chemical species in the simulation</b><br/>
           <input type="number" value="1" step="1" id="numel" disabled onchange="updateNumEl()"/>
           <div id="numellist">
           </div>
           <div id="numeltemplate" style="display: none">
-            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="http://en.wikipedia.orh/wiki/amu">amu</a> (mass)<br/>
+            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="http://en.wikipedia.orh/wiki/Atomic_mass_unit">amu</a> (mass)<br/>
           </div>
         </div>
       </div>
-      <div style="width: 48%; float: left">
+      <div style="width: 58%; float: left">
         <div class="box radioon">
           <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
           <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
@@ -235,7 +247,7 @@
             <input id="baroramp" type="checkbox" 
                    onclick="baropt.ramp=this.checked; $('#barop0').attr('disabled', baropt.ramp);">
             <label for="baroramp">ramp barostat setpressure</label><br/>
-            $\frac{dP_0}{dt}$</sub>=<input type="number" value="0.01" step="0.01" 
+            $\frac{dP_0}{dt}$=<input type="number" value="0.01" step="0.01" 
                                            onchange="baropt.dP0dt=parseFloat(this.value)/jsmd.constants.MPa"/> MPa/fs
           </div>
           <div class="helptext">
@@ -253,7 +265,7 @@
             <input id="thermramp" type="checkbox" 
                    onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
             <label for="thermramp">ramp thermostat settemperature</label><br/>
-            $\frac{dT_0}{dt}$</sub>=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
+            $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
           </div>
         </div>
 
@@ -306,7 +318,7 @@
         $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onclick=e.onchange; } } );
         
         // open all wp links in external window
-        $('.wp').each
+        $('a.wp').each( function(i,e) { $(e).attr('target','wp'); } );
 
         // start animations for boundary condition selection
         bcvis.start();
@@ -406,10 +418,36 @@
               case 'gas' :
                 var num = parseInt($('#sgnum').val()),
                     temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
+                    rmin = parseFloat($('#sgminr').val()),
+                    limit = $('#sglim').val(),
                     i,w,x1,x2,v2 = 0.0,gr=[];
                 ss = parseFloat($('#sglen').val());
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
+
+                // create and position atoms
+                for( n = 0; n < num; ++n ) {
+                  // create atom at random position
+                  a = new jsmd.Atom( jsmd.Vector.random(sv) );
+                  sim.atoms.push(a);
+                }
+
+                // make sure none are closer than rmin
+                if( limit ) {
+                  sim.setCutOff(rmin,0.0);
+                  var dirty;
+                  do {
+                    sim.nl.update();
+                    dirty = false;
+                    // reposition all atoms that have a non-empty neighbor list (=too close)
+                    for( n = 0; n < num; ++n ) {
+                      if( sim.nl.data[n].length > 0 ) {
+                        sim.atoms[n].p.random(sv);
+                        dirty = true;
+                      }
+                    }
+                  } while(dirty);
+                }
 
                 // assign gaussian distributed velocities
                 for( n = 0; n < num; ++n ) {
@@ -430,12 +468,11 @@
                   }
                      
                   // create atom at random position, with gaussian velocity distribution
-                  a = new jsmd.Atom( jsmd.Vector.random(sv) );
+                  a = sim.atoms[n];
                   a.v.x = gr[(n%2)*3];
                   a.v.y = gr[(n%2)*3+1];
                   a.v.z = gr[(n%2)*3+2];
                   v2 += a.v.len2() * 1.0; // TODO: mass assumed to be 1.0
-                  sim.atoms.push(a);
                 }
 
                 // rescale to desired temperature
@@ -509,6 +546,7 @@
 
                 // set cut-off
                 sim.setCutOff(3.5,0.5);
+
                 break;
             }
             sim.nl.update();

@@ -22,6 +22,7 @@
     <style>
       div.box { 
         border: 1px solid gray; margin: 5px; padding: 5px;
+        position: relative;
         -moz-box-shadow: 5px 5px 5px #ccc;
         -webkit-box-shadow: 5px 5px 5px #ccc;
         box-shadow: 5px 5px 5px #ccc;
@@ -30,8 +31,18 @@
 
       div.green { background-color: #aaffaa }
       div.blue { background-color: #aaaaff }
-      div.optional { display: none; padding-top: 5px; margin-top: 5px; border-top: 1px dashed gray }
-      div.helptext { display: none }
+      div.optional { 
+        display: none; 
+        position: relative;
+        padding-top: 5px; 
+        margin-top: 5px; 
+        border-top: 1px dashed gray; 
+      }
+      div.helptext { 
+        display: none;
+        padding: 5px;
+        font-size: 90%;
+      }
       a.wp { 
         color: black;
         text-decoration: none;
@@ -340,6 +351,20 @@
             target: 'wp', 
             href: 'http://en.wikipedia.org/wiki/'+$(e).attr('href') 
           } ); 
+        } );
+
+        // wire-up all help boxes
+        $('div.helptext').each( function(i,e) {
+          $(e).parent().append( 
+            $('<img src="gtk-info.svg">')
+              .css( { 
+                position: 'absolute', 
+                top: '3px', right: '3px',
+                cursor: 'pointer'
+              } )
+              .attr( 'title', 'Toggle help' )
+              .toggle( function() { $(e).show() }, function() { $(e).hide() } ) 
+          );
         } );
 
         // start animations for boundary condition selection

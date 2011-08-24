@@ -1006,6 +1006,33 @@
         }
         return output;
       }
+
+      function saveForm(selector) {
+        var data = {};
+        $(selector).find('input').each( function(i,e) {
+          var id =  $(e).attr('id'), type = $(e).attr('type');
+          if( id != '' ) {
+            if( type == 'radio' || type == 'checkbox' ) {
+              data[id] = $(e).attr('checked');
+            } else {
+              data[id] = $(e).val();
+            }
+          }
+        } );
+        return data;
+      }
+      function restoreForm(selector,data) {
+        $(selector).find('input').each( function(i,e) {
+          var id =  $(e).attr('id'), type = $(e).attr('type');
+          if( id != '' && data[id] !== undefined ) {
+            if( type == 'radio' || type == 'checkbox' ) {
+              $(e).attr('checked', data[id] );
+            } else {
+              $(e).val(data[id]);
+            }
+          }
+        } );
+      }
     </script>
   </body>
 </html>

@@ -54,12 +54,13 @@
         box-sizing: border-box;
       }
       
-      #step1,#step2,#step3 {
+      #step1,#step1b,#step2,#step3 {
         border: 1px dotted blue;
         background-color: #eeeeee;
         padding: 0.5em;
       }
       h1 { font-family: sans; }
+      #step1b { display: none; border-color: red; margin-bottom: 5px; }
       #step2 { display: none }
       #step3 { display: none }
   
@@ -120,7 +121,13 @@
       </div>
       <br style="clear: both"/>
       <button onclick="gostep(1,2)">Next</button>
-    </div>               
+    </div> 
+
+    <div id="step1b">
+      <b>Selected sample is too dense to enforce the chosen minimum distance!</b><br/>
+      Retry without or with smaller r<sub>min</sub>. As a workaround you can relax the system to a low temperature (press <i>remove heat</i> repeatedly) and then use a thermostat to reach the desired sample temperature.<br/>
+      <button onclick="$('#step1b').hide(400)">Dismiss</button>
+    </div>
 
     <!-- Step 2: choose interaction potential -->
     <div id="step2">
@@ -444,8 +451,12 @@
                 // make sure none are closer than rmin
                 if( limit ) {
                   sim.setCutOff(rmin,0.0);
-                  var dirty;
+                  var dirty, attempt = 1;
                   do {
+                    if( attempt > 40 ) {
+                      $('#step1b').show(400);
+                      break;
+                    }
                     sim.nl.update();
                     dirty = false;
                     // reposition all atoms that have a non-empty neighbor list (=too close)
@@ -455,7 +466,9 @@
                         dirty = true;
                       }
                     }
+                    attempt++;
                   } while(dirty);
+                  //$('#step1b').hide(400);
                 }
 
                 // assign gaussian distributed velocities
@@ -534,6 +547,7 @@
             }
             break;
           case 2:
+            $('#step1b').hide(400);
             switch( $('input:radio[name=potential]:checked').val() ) {
               case 'none' : 
                 // set cut-off

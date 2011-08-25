@@ -1031,14 +1031,22 @@
           cell.css( 'backgroundColor', '' );
         }
       }
+      function saveCell(i,j) {
+        if( !matrix.form[i] ) { matrix.form[i] = [] }
+        matrix.form[i][j] = saveForm('#potentialform');
+      }
+      function restoreCell(i,j) {
+        if( matrix.form[i] && matrix.form[i][j] ) {
+          restoreForm( '#potentialform', matrix.form[i][j] );
+        }
+      }
       function updateNumEl() {
         var i, j, cell,row, table, numel = parseInt($('#numel option:selected').val());
 
         function clickMatrix(e,i,j) {
           e.click( function() {
             // save current
-            if( !matrix.form[matrix.ci] ) { matrix.form[matrix.ci] = [] }
-            matrix.form[matrix.ci][matrix.cj] = saveForm('#potentialform');
+            saveCell( matrix.ci, matrix.cj );
 
             // add symbol for potential
             styleMatrixCell( matrix.ci, matrix.cj );
@@ -1046,9 +1054,7 @@
 
             // restore clicked
             $('#mat_'+i+'_'+j).css( { backgroundColor : 'green', border: '2px solid red' } );
-            if( matrix.form[i] && matrix.form[i][j] ) {
-              restoreForm( '#potentialform', matrix.form[i][j] );
-            }
+            restoreCell(i,j);
             updateRadios('#potentialform');
 
             // switch current
@@ -1060,6 +1066,9 @@
         if( numel == 1 ) {
           $('#matrixbox').hide(400);
         } else {
+          // save current
+          saveCell( matrix.ci, matrix.cj );
+
           // update interaction matrix widget
           $('#matrixcontainer').empty();
           
@@ -1090,6 +1099,7 @@
           }
           matrix.ci = 0;
           matrix.cj = 0;
+          restoreCell( matrix.ci, matrix.cj );
           $('#matrixcontainer').append(table);
           $('#matrixbox').show(400);
         }

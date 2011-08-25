@@ -73,7 +73,7 @@
       h1 { font-family: sans; }
       #step1b { display: none; border-color: red; margin-bottom: 5px; }
       #matrixbox { display: none }
-      #matrixbox>table>tbody>tr>td {
+      #matrixcontainer>table>tbody>tr>td {
         border: 1px solid black;
         cursor: pointer;
         -webkit-user-select: none;
@@ -353,6 +353,7 @@
           sc = $('#simcan'),
           sim, force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
+          matrix = { ci:0, cj:0, form:[] },
           averages = {}, rup = false,
           logp = $('#log'),
           showT = $('#showT'),
@@ -424,8 +425,8 @@
         // add logic to show .optional on hover
         $('.optional').each( function(i,e) {
           $(e).parent()
-            .mouseenter( function(){ $(e).stop(true,true).delay(500).show(400); } )
-            .mouseleave( function(){ $(e).stop(true,true).delay(500).hide(400); } )
+            .mouseenter( function(){ $(e).stop(true,true).delay(500).slideDown(400); } )
+            .mouseleave( function(){ $(e).stop(true,true).delay(500).slideUp(400); } )
         } );
       });
 
@@ -996,12 +997,40 @@
       })();
 
       function updateNumEl() {
-        var i, j, row, table, numel = $('#numel option:selected').val();
+        var i, j, cell,row, table, numel = parseInt($('#numel option:selected').val());
+
+        function clickMatrix(e,i,j) {
+          e.click( function() {
+            // save current
+            if( !matrix.form[matrix.ci] ) { matrix.form[matrix.ci] = [] }
+            matrix.form[matrix.ci][matrix.cj] = saveForm('#potentialform');
+
+            // add symbold for potential
+            var box = $('#mat_'+matrix.ci+'_'+matrix.cj);
+            box.css( 'border', '' );
+            if( matrix.form[matrix.ci][matrix.cj].pot_none ) {
+
+            }
+            if( matrix.form[matrix.ci][matrix.cj].pot_lj ) {
+            }
+
+            // restore clicked
+            $('#mat_'+i+'_'+j).css( { backgroundColor : 'green', border: '2px solid red' } );
+            if( matrix.form[i] && matrix.form[i][j] ) {
+              restoreForm( '#potentialform', matrix.form[i][j] );
+            }
+
+            // switch current
+            matrix.ci = i;
+            matrix.cj = j;
+          } );
+        }
+
         if( numel == 1 ) {
           $('#matrixbox').hide(400);
         } else {
           // update interaction matrix widget
-          $('#matrixbox').find('table').remove();
+          $('#matrixcontainer').empty();
           
           // column heads
           row = $('<tr></tr>').append( $('<th></th>') );
@@ -1014,11 +1043,17 @@
           for( i = 0; i < numel; ++i ) {
             row = $('<tr></tr>').append( $('<th></th>').text(i) );
             for( j = i; j < numel; ++j ) {
-              row.append( $('<td></td>').attr( 'id', 'mat_'+i+'_'+j ).text('X') );
+              cell = $('<td></td>').attr( 'id', 'mat_'+i+'_'+j ).text('X');
+              if( i == 0 && j == 0 ) { cell.css( { backgroundColor : 'green', border: '2px solid red' } ); }
+              clickMatrix(cell,i,j);
+              row.append(cell);
             }
             table.append(row);
           }
-          $('#matrixbox').append(table).show(400);
+          matrix.ci = 0;
+          matrix.cj = 0;
+          $('#matrixcontainer').append(table);
+          $('#matrixbox').show(400);
         }
       }
       

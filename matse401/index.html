@@ -173,8 +173,10 @@
           </select>
           <div id="numellist">
           </div>
-          <div id="numeltemplate" style="display: none">
-            m<sub></sub>=<input type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a> (mass)<br/>
+          <!--<div id="numeltemplate" style="display: none">-->
+          <div id="numeltemplate" style="">
+            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text"/> , 
+            <span style="text-wrap: nowrap">m<sub></sub>=<input type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
           </div>
         </div>
         <div class="box" id="matrixbox">
@@ -357,6 +359,7 @@
           sim, force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
+          elcolor = [ '#ff0000', '#00ff00', '#0000ff', '#ff00ff' ],
           averages = {}, rup = false,
           logp = $('#log'),
           showT = $('#showT'),
@@ -371,6 +374,9 @@
       $(function() {
         // make sure the box highlighting corresponds to the radio button state (some browseres restore forms)
         updateRadios('#step1');
+
+        // prepare UI for interaction matrix
+        updateNumEl();
 
         // duplicate the onchange hander into click handler for input[type=number] elements
         // workaround for http://code.google.com/p/chromium/issues/detail?id=51836

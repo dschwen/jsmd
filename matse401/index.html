@@ -171,12 +171,11 @@
             <option value="3">3</option>
             <option value="4">4</option>
           </select>
-          <div id="numellist">
-          </div>
-          <!--<div id="numeltemplate" style="display: none">-->
-          <div id="numeltemplate" style="">
-            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text"/> , 
-            <span style="text-wrap: nowrap">m<sub></sub>=<input type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
+          <ol id="numellist">
+          </ol>
+          <div id="numeltemplate" style="display: none">
+            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name"/> , 
+            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
           </div>
         </div>
         <div class="box" id="matrixbox">
@@ -359,7 +358,10 @@
           sim, force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
-          elcolor = [ '#ff0000', '#00ff00', '#0000ff', '#ff00ff' ],
+          elements = {
+            color : [ '#ff0000', '#00ff00', '#0000ff', '#ff00ff' ],
+            li : []
+          },
           averages = {}, rup = false,
           logp = $('#log'),
           showT = $('#showT'),
@@ -375,7 +377,15 @@
         // make sure the box highlighting corresponds to the radio button state (some browseres restore forms)
         updateRadios('#step1');
 
-        // prepare UI for interaction matrix
+        // prepare UI for element list
+        var i, div;
+        for( i = 0; i< 4; ++i ) {
+          div = $('<li></li>').append( $('#numeltemplate').children().clone() ).appendTo( $('#numellist') );
+          div.find('input').eq(0).attr('id','numelname_'+i);
+          div.find('div').css('backgroundColor',elements.color[i]);
+          div.find('input').eq(1).attr('id','numelmass_'+i);
+          elements.li[i] = div;
+        }
         updateNumEl();
 
         // duplicate the onchange hander into click handler for input[type=number] elements
@@ -1076,6 +1086,16 @@
           } );
         }
 
+        // update element list
+        for( i = 0; i < 4; ++i ) {
+          if( i >= numel ) {
+            elements.li[i].hide();
+          } else {
+            elements.li[i].show();
+          }
+        }
+        
+        // update matrix
         if( numel == 1 ) {
           $('#matrixbox').hide(400);
         } else {
@@ -1088,13 +1108,13 @@
           // column heads
           row = $('<tr></tr>').append( $('<th></th>') );
           for( j = 0; j < numel; ++j ) {
-            row.append( $('<th></th>').text(j) );
+            row.append( $('<th></th>').text(j+1) );
           }
           table = $('<table></table>').css( { marginLeft: 'auto', marginRight: 'auto' } ).append(row);
 
           // body and row heads
           for( i = 0; i < numel; ++i ) {
-            row = $('<tr></tr>').append( $('<th></th>').text(i) );
+            row = $('<tr></tr>').append( $('<th></th>').text(i+1) );
             for( j = 0; j < numel; ++j ) {
               if( j < i ){
                 cell = $('<th></th>');

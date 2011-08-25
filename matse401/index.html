@@ -76,6 +76,9 @@
       #matrixcontainer>table>tbody>tr>td {
         border: 1px solid black;
         cursor: pointer;
+        width: 3em;
+        height: 3em;
+        text-align: center;
         -webkit-user-select: none;
         -moz-user-select: none;
         -o-user-select: none;
@@ -1055,6 +1058,10 @@
             // restore clicked
             $('#mat_'+i+'_'+j).css( { backgroundColor : 'green', border: '2px solid red' } );
             restoreCell(i,j);
+
+            // immediately save cell again in case it did not exist (needed for styleMatrixCell)
+            saveCell(i,j);
+            styleMatrixCell(i,j);
             updateRadios('#potentialform');
 
             // switch current
@@ -1097,12 +1104,12 @@
             }
             table.append(row);
           }
-          matrix.ci = 0;
-          matrix.cj = 0;
-          restoreCell( matrix.ci, matrix.cj );
           $('#matrixcontainer').append(table);
           $('#matrixbox').show(400);
         }
+        matrix.ci = 0;
+        matrix.cj = 0;
+        restoreCell( matrix.ci, matrix.cj );
       }
       
       function updateRadios(sel) {

@@ -175,10 +175,10 @@
           </div>
         </div>
         <div class="box" id="matrixbox">
-          <b>Nothing to see here - move along!</b>
+          <b>Pair interaction matrix</b>
           <div id="matrixcontainer"></div>
           <div class="helptext">
-            The interaction matrix determined which potential to use between each pair of atoms. Click on a cell in the matrix and select the potential potential and its parameters on the left, until all cells appear green and no more <i>X</i> cells remain.
+            The interaction matrix determines which potential to use between each pair of atoms of all possible combinations of chemical species. There are as many rows and columns as there are species, and each cell in the matrix contains the interaction of type <i>row</i> with type <i>column</i>. Click on a cell and select the potential potential and its parameters on the left, until all cells appear green.
           </div>
         </div>
       </div>
@@ -189,13 +189,13 @@
         </div>
         <div class="box radiooff">
           <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
-          <label for="pot_lj"><b>Lennard Jones</b> pair potential</label></br>
+          <label for="pot_lj"><b>Lennard-Jones</b> pair potential</label></br>
           <p>\[ 
               V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
           \]</p>
           $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
           $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
-          $r_{cut}=$ <input type="number" value="3.5" id="ljsigma"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+          $r_{cut}=$ <input type="number" value="3.5" id="ljrcut"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
         </div>
       </div>
       <br style="clear: both"/>
@@ -607,30 +607,51 @@
             break;
           case 2:
             $('#step1b').hide(400);
-            switch( $('input:radio[name=potential]:checked').val() ) {
-              case 'none' : 
-                // set cut-off
-                sim.computeChain[2] = null;
-                sim.setCutOff(8,0.5);
-                break;
+            
+            // save current formstate into matrix.form
+            if( !matrix.form[matrix.ci] ) { matrix.form[matrix.ci] = [] }
+            matrix.form[matrix.ci][matrix.cj] = saveForm('#potentialform');
 
-              case 'lj' : 
-                // get and convert parameters
-                var sigma = parseFloat($('#ljsigma').val()) ,
-                    epsilon = parseFloat($('#ljepsilon').val()) * jsmd.constants.kB;
+            // default is no force calculation, if even one potential is used this will be overridden
+            sim.computeChain[2] = null;
 
-                // tabulate the potential with all default options
-                force = jsmd.potential.tabulated( jsmd.potential.lennardJones( sigma, epsilon ) );
+            // loop over interaction settings
+            var i,j, rcut, rcutmax = 0.0, numel = parseInt($('#numel option:selected').val());
+            for( i = 0; i < numel; ++i ) {
+              for( j = i; j < numel; ++j ) {
 
-                // set interaction matrix (1x1)
-                sim.computeChain[2] = jsmd.compute.forces;
-                sim.setInteraction( [0,0], force );
+                // test if input exists
+                // potential 'none'
+                if( !matrix.form[i] || !matrix.form[i][j] || matrix.form[i][j].pot_none ) {
+                  // empty potential, don't do anything here
+                  continue;
+                } 
 
-                // set cut-off
-                sim.setCutOff(3.5,0.5);
+                if( matrix.form[i][j].pot_lj ) {
+                  // get cut off
+                  rcut = parseFloat(matrix.form[i][j].ljrcut);
+                  if( rcut > rcutmax ) {
+                    rcutmax = rcut;
+                  }
+                  
+                  // tabulate the potential with a spacing of 0.01 and the selected cut-off
+                  force = jsmd.potential.tabulated( 
+                    jsmd.potential.lennardJones( 
+                      parseFloat(matrix.form[i][j].ljsigma), 
+                      parseFloat(matrix.form[i][j].ljepsilon) ), 0.01, rcut 
+                  );
 
-                break;
+                  // set interaction matrix (1x1)
+                  sim.computeChain[2] = jsmd.compute.forces;
+                }
+
+                // insert force into interaction matrix
+                sim.setInteraction( [i,j], force );
+              }
             }
+
+            // use largest cutoff for the neighborlist
+            sim.setCutOff(rcutmax,0.5);
             sim.nl.update();
 
             // misc
@@ -996,6 +1017,20 @@
         return { start: step, stop: function() { clearTimeout(handler); } }
       })();
 
+      function styleMatrixCell(i,j,cell) {
+        cell = cell || $('#mat_'+i+'_'+j);
+        if( matrix.form[i] && matrix.form[i][j] ) {
+          cell.css( 'backgroundColor', 'green' );
+          if( matrix.form[i][j].pot_none ) {
+            cell.text('0');
+          }
+          if( matrix.form[i][j].pot_lj ) {
+            cell.text('LJ');
+          }
+        } else {
+          cell.css( 'backgroundColor', '' );
+        }
+      }
       function updateNumEl() {
         var i, j, cell,row, table, numel = parseInt($('#numel option:selected').val());
 
@@ -1005,20 +1040,16 @@
             if( !matrix.form[matrix.ci] ) { matrix.form[matrix.ci] = [] }
             matrix.form[matrix.ci][matrix.cj] = saveForm('#potentialform');
 
-            // add symbold for potential
-            var box = $('#mat_'+matrix.ci+'_'+matrix.cj);
-            box.css( 'border', '' );
-            if( matrix.form[matrix.ci][matrix.cj].pot_none ) {
-
-            }
-            if( matrix.form[matrix.ci][matrix.cj].pot_lj ) {
-            }
+            // add symbol for potential
+            styleMatrixCell( matrix.ci, matrix.cj );
+            $('#mat_'+matrix.ci+'_'+matrix.cj).css( 'border', '' );
 
             // restore clicked
             $('#mat_'+i+'_'+j).css( { backgroundColor : 'green', border: '2px solid red' } );
             if( matrix.form[i] && matrix.form[i][j] ) {
               restoreForm( '#potentialform', matrix.form[i][j] );
             }
+            updateRadios('#potentialform');
 
             // switch current
             matrix.ci = i;
@@ -1042,10 +1073,17 @@
           // body and row heads
           for( i = 0; i < numel; ++i ) {
             row = $('<tr></tr>').append( $('<th></th>').text(i) );
-            for( j = i; j < numel; ++j ) {
-              cell = $('<td></td>').attr( 'id', 'mat_'+i+'_'+j ).text('X');
-              if( i == 0 && j == 0 ) { cell.css( { backgroundColor : 'green', border: '2px solid red' } ); }
-              clickMatrix(cell,i,j);
+            for( j = 0; j < numel; ++j ) {
+              if( j < i ){
+                cell = $('<th></th>');
+              } else {
+                cell = $('<td></td>').attr( 'id', 'mat_'+i+'_'+j ).text('X');
+                if( i == 0 && j == 0 ) { 
+                  cell.css( 'border', '2px solid red' ); 
+                } 
+                styleMatrixCell( i, j, cell );
+                clickMatrix(cell,i,j);
+              }
               row.append(cell);
             }
             table.append(row);

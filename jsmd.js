@@ -662,6 +662,7 @@ function initJSMD(dim) {
 
     // linear interpolation function
     function linint(r) {
+      if( r > rc ) { return 0.0; }
       r *= mul;
       var b = Math.floor(r);
       r -= b;

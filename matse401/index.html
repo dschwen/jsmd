@@ -359,7 +359,8 @@
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
           elements = {
-            color : [ '#ff0000', '#00ff00', '#0000ff', '#ff00ff' ],
+            colorHTML : [ '#ff0000', '#00ff00', '#0000ff', '#ff00ff' ],
+            color3d : [ {r:1,g:0,b:0},{r:0,g:1,b:0},{r:0,g:0,b:1},{r:1,g:0,b:1}  ],
             li : []
           },
           averages = {}, rup = false,
@@ -382,7 +383,7 @@
         for( i = 0; i< 4; ++i ) {
           div = $('<li></li>').append( $('#numeltemplate').children().clone() ).appendTo( $('#numellist') );
           div.find('input').eq(0).attr('id','numelname_'+i);
-          div.find('div').css('backgroundColor',elements.color[i]);
+          div.find('div').css('backgroundColor',elements.colorHTML[i]);
           div.find('input').eq(1).attr('id','numelmass_'+i);
           elements.li[i] = div;
         }
@@ -475,6 +476,7 @@
                         a.v.x = 0.5*(Math.random()-0.5);
                         a.v.y = 0.5*(Math.random()-0.5);
                         a.v.z = 0.5*(Math.random()-0.5);
+                        a.t = n;
                         sim.atoms.push(a);
                       }   
                     }
@@ -523,6 +525,7 @@
                 for( n = 0; n < num; ++n ) {
                   // create atom at random position
                   a = new jsmd.Atom( jsmd.Vector.random(sv) );
+                  a.t = n % 4;
                   sim.atoms.push(a);
                 }
 
@@ -582,9 +585,6 @@
                 }
                 break;
             }
-            t = new jsmd.AtomType();
-            t.r = 0.25;
-            sim.types.push(t);
 
             // add entry for heat influx/outflux
             sim.work.heat = 0.0;
@@ -603,11 +603,6 @@
             // delete existing visualization
             $('#simcan').empty();
 
-            // initialize render3d (container must not be hidden!)
-            $('#step3').css( { display: "block", visibility: "hidden" } )
-            render3d = initRender3D( sim, $('#simcan')[0] );
-            $('#step3').css( { display: "none", visibility: "visible" } )
-      
             // stop little animations
             bcvis.stop();
 
@@ -634,8 +629,23 @@
             // default is no force calculation, if even one potential is used this will be overridden
             sim.computeChain[2] = null;
 
+            // set elements
+            var i, j, numel = parseInt($('#numel option:selected').val());
+            for( i = 0; i < numel; i++ ) { 
+              t = new jsmd.AtomType();
+              t.r = parseFloat($('#numelmass_'+i).val());
+              t.name = $('#numelname_'+i).val();
+              t.color3d = elements.color3d[i];
+              sim.types[i] = t;
+            }
+            
+            // initialize render3d (container must not be hidden!)
+            $('#step3').css( { display: "block", visibility: "hidden" } )
+            render3d = initRender3D( sim, $('#simcan')[0] );
+            $('#step3').css( { display: "none", visibility: "visible" } )
+      
             // loop over interaction settings
-            var i,j, rcut, rcutmax = 0.0, numel = parseInt($('#numel option:selected').val());
+            var rcut, rcutmax = 0.0;
             for( i = 0; i < numel; ++i ) {
               for( j = i; j < numel; ++j ) {
 

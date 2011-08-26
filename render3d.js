@@ -15,6 +15,13 @@ function initRender3D( sim, container ) {
 
   var geometry, lines = [];
 
+  // add colors to types
+  for( i = 0; i < sim.types.length; ++i ) {
+    var t = sim.types[i];
+    t.colorThree = new THREE.Color( 0xffffff );
+    t.colorThree.setRGB( t.color3d.r, t.color3d.g, t.color3d.b );
+  }
+
   // select renderer
   if (typeof Float32Array != "undefined") {
     try {
@@ -30,8 +37,7 @@ function initRender3D( sim, container ) {
   geometry = new THREE.Geometry();
 
   var sprite = THREE.ImageUtils.loadTexture( "ball.png" );
-  var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: false } );
-  material.color.setRGB( 1.0, 0.0, 0.0 );
+  var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: true } );
 
   // atoms (added dynamically)
   particles = webgl ? new THREE.ParticleSystem( geometry, material ) : new THREE.Object3D();
@@ -123,8 +129,10 @@ function initRender3D( sim, container ) {
         particles.geometry.vertices[i].position.x = sim.atoms[i].p.x - sim.ss.x/2;
         particles.geometry.vertices[i].position.y = sim.atoms[i].p.y - sim.ss.y/2;
         particles.geometry.vertices[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;
+        particles.geometry.colors[i] = sim.types[sim.atoms[i].t].colorThree;
       }
       particles.geometry.__dirtyVertices = true;
+      particles.geometry.__dirtyColors = true;
     } else {
       // fallback visualization
       while( sim.atoms.length < particles.children.length ) {
@@ -140,6 +148,7 @@ function initRender3D( sim, container ) {
       // update vertices
       for( i = 0; i < sim.atoms.length; ++i )
       {
+        particles.children[i].materials[0].color = sim.types[ sim.atoms[i].t ].colorThree;
         particles.children[i].position.x = sim.atoms[i].p.x - sim.ss.x/2;
         particles.children[i].position.y = sim.atoms[i].p.y - sim.ss.y/2;
         particles.children[i].position.z = sim.atoms[i].p.z - sim.ss.z/2;

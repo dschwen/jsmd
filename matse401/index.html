@@ -166,7 +166,7 @@
       <div style="width: 38%; float: right">
         <div class="box">
           <b>Number of chemical species in the simulation</b><br/>
-          <select disabled id="numel" onchange="updateNumEl()"/>
+          <select id="numel" onchange="updateNumEl()"/>
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -175,8 +175,8 @@
           <ol id="numellist">
           </ol>
           <div id="numeltemplate" style="display: none">
-            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name" disabled/> , 
-            <span style="white-space: nowrap">m<sub></sub>=<input disabled title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
+            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name"/> , 
+            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
           </div>
         </div>
         <div class="box" id="matrixbox">
@@ -477,7 +477,7 @@
                         a.v.x = 0.5*(Math.random()-0.5);
                         a.v.y = 0.5*(Math.random()-0.5);
                         a.v.z = 0.5*(Math.random()-0.5);
-                        //a.t = n;
+                        a.t = n;
                         sim.atoms.push(a);
                       }   
                     }
@@ -526,7 +526,7 @@
                 for( n = 0; n < num; ++n ) {
                   // create atom at random position
                   a = new jsmd.Atom( jsmd.Vector.random(sv) );
-                  //a.t = n % 4;
+                  a.t = n % 4;
                   sim.atoms.push(a);
                 }
 

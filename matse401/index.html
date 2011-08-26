@@ -356,7 +356,7 @@
       var jsmd = initJSMD(3),
           ss, sv,
           sc = $('#simcan'),
-          sim, force,
+          sim, force, rcutpad = 0.5,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
           elements = {
@@ -521,6 +521,7 @@
                 ss = parseFloat($('#sglen').val());
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
+                rcutpad = 1.0;
 
                 // create and position atoms
                 for( n = 0; n < num; ++n ) {
@@ -681,7 +682,7 @@
             }
 
             // use largest cutoff for the neighborlist
-            sim.setCutOff(rcutmax,1.0);
+            sim.setCutOff(rcutmax,rcutpad);
             sim.nl.update();
 
             // misc

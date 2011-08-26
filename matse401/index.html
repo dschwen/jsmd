@@ -98,17 +98,17 @@
       <h1>Sample geometry</h1>
       <p>Select a sample geometry and boundary conditions.</p>
       <div style="width: 48%; float: left">
-      	<div class="box radioon">
+        <div class="box radioon">
           <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step1')" checked id="sam_fcc"/> 
           <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
           $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )
-      	</div>
-      	<div class="box radiooff">
+        </div>
+        <div class="box radiooff">
           <input value="nano" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_nano"/> 
           <label for="sam_nano"><b>Nano particle</b></label></br>
           $r=$ <input type="number" value="3" id="npradius"/> &Aring; (radius)
-      	</div>
-      	<div class="box radiooff">
+        </div>
+        <div class="box radiooff">
           <input value="gas" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_gas"/> 
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
@@ -126,21 +126,22 @@
               very fast. This is undesired and can be avoided by checking this option.
             </div>
           </div>
-      	</div>
+        </div>
       </div>
       <div style="width: 48%; float: right">
-      	<div class="box radioon">
+          <div class="box radioon">
           <input value="period" type="radio" name="boundary" onchange="updateRadios('#step1')" checked id="bc_period"/> 
           <label for="bc_period"><b>Periodic boundaries</b></label></br>
+          <span style="color: red">Volume changing <i>piston</i> is <b>not available</b> in this mode!</span>
           <canvas id="bc_can_period" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
-	  <br style="clear: both"/>
-      	</div>
-      	<div class="box radiooff">
+          <br style="clear: both"/>
+      </div>
+        <div class="box radiooff">
           <input value="reflect" type="radio" name="boundary" onchange="updateRadios('#step1')" id="bc_reflect"/> 
           <label for="bc_reflect"><b>Reflecting boundaries</b></label></br>
           <canvas id="bc_can_reflect" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
-	  <br style="clear: both"/>
-      	</div>
+          <br style="clear: both"/>
+        </div>
       </div>
       <br style="clear: both"/>
       <button onclick="gostep(1,2)" onmouseover="$('#step1').find('.optional').stop(true)">Next</button>
@@ -165,7 +166,7 @@
       <div style="width: 38%; float: right">
         <div class="box">
           <b>Number of chemical species in the simulation</b><br/>
-          <select id="numel" onchange="updateNumEl()"/>
+          <select disabled id="numel" onchange="updateNumEl()"/>
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -174,8 +175,8 @@
           <ol id="numellist">
           </ol>
           <div id="numeltemplate" style="display: none">
-            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name"/> , 
-            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
+            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name" disabled/> , 
+            <span style="white-space: nowrap">m<sub></sub>=<input disabled title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
           </div>
         </div>
         <div class="box" id="matrixbox">
@@ -476,7 +477,7 @@
                         a.v.x = 0.5*(Math.random()-0.5);
                         a.v.y = 0.5*(Math.random()-0.5);
                         a.v.z = 0.5*(Math.random()-0.5);
-                        a.t = n;
+                        //a.t = n;
                         sim.atoms.push(a);
                       }   
                     }
@@ -525,7 +526,7 @@
                 for( n = 0; n < num; ++n ) {
                   // create atom at random position
                   a = new jsmd.Atom( jsmd.Vector.random(sv) );
-                  a.t = n % 4;
+                  //a.t = n % 4;
                   sim.atoms.push(a);
                 }
 

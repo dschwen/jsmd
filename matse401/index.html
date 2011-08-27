@@ -1209,6 +1209,10 @@
           }
         } );
       }
+
+      function relayout() {
+        $('#simcan').insertBefore('#plotbox').addClass('right').css('height','400px'); render3d = initRender3D( sim, $('#simcan')[0] );
+      }
     </script>
   </body>
 </html>

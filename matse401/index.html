@@ -422,6 +422,9 @@
         // initialize plotting data tables
         clearTabs();
 
+        // wire-up doubleclick on 3d view to change layout
+        setupRelayout();
+
         // make plot resizable
         var oy;
         function doResizing(e) {
@@ -1210,8 +1213,17 @@
         } );
       }
 
-      function relayout() {
-        $('#simcan').insertBefore('#plotbox').addClass('right').css('height','400px'); render3d = initRender3D( sim, $('#simcan')[0] );
+      function setupRelayout() {
+        var full = true;
+        function layoutCompact() {
+          $('#simcan').insertBefore('#plotbox').addClass('right').css('height','400px'); render3d = initRender3D( sim, $('#simcan')[0] );
+          full = false;
+        }
+        function layoutFull() {
+          $('#simcan').insertAfter('#step3>h1').removeClass('right').css('height','600px'); render3d = initRender3D( sim, $('#simcan')[0] );
+          full = true;
+        }
+        $('#simcan').dblclick( function() { full ? layoutCompact() : layoutFull(); } );
       }
     </script>
   </body>

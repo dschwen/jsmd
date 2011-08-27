@@ -1208,6 +1208,22 @@
           }
         } );
       }
+      function profile() {
+        var i,min,max,ave,d;
+        
+        // analyze neighborlist usage
+        min = max = ave = sim.nl.data[0].length;
+        for( i = 1; i < sim.nl.data.length; ++i ) { 
+          d = sim.nl.data[i].length;
+          ave += d;
+          min = d < min ? d : min;
+          max = d > max ? d : max;
+        }
+        ave /= sim.nl.data.length;
+        console.log( 'NL occupancy: min='+min+' max='+max+' average='+ave );
+
+
+      }
     </script>
   </body>
 </html>

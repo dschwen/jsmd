@@ -356,7 +356,7 @@
       var jsmd = initJSMD(3),
           ss, sv,
           sc = $('#simcan'),
-          sim, force,
+          sim, force, rcutpad = 0.5,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
           elements = {
@@ -421,6 +421,9 @@
         
         // initialize plotting data tables
         clearTabs();
+
+        // wire-up doubleclick on 3d view to change layout
+        setupRelayout();
 
         // make plot resizable
         var oy;
@@ -521,6 +524,7 @@
                 ss = parseFloat($('#sglen').val());
                 sv = new jsmd.Vector(ss,ss,ss);
                 sim = new jsmd.Simulation(sv);
+                rcutpad = 1.0;
 
                 // create and position atoms
                 for( n = 0; n < num; ++n ) {
@@ -681,7 +685,7 @@
             }
 
             // use largest cutoff for the neighborlist
-            sim.setCutOff(rcutmax,0.5);
+            sim.setCutOff(rcutmax,rcutpad);
             sim.nl.update();
 
             // misc
@@ -1208,6 +1212,7 @@
           }
         } );
       }
+
       function profile() {
         var i,min,max,ave,d;
         
@@ -1221,8 +1226,20 @@
         }
         ave /= sim.nl.data.length;
         console.log( 'NL occupancy: min='+min+' max='+max+' average='+ave );
+      }
 
 
+      function setupRelayout() {
+        var full = true;
+        function layoutCompact() {
+          $('#simcan').insertBefore('#plotbox').addClass('right').css('height','400px'); render3d = initRender3D( sim, $('#simcan')[0] );
+          full = false;
+        }
+        function layoutFull() {
+          $('#simcan').insertAfter('#step3>h1').removeClass('right').css('height','600px'); render3d = initRender3D( sim, $('#simcan')[0] );
+          full = true;
+        }
+        $('#simcan').dblclick( function() { full ? layoutCompact() : layoutFull(); } );
       }
     </script>
   </body>

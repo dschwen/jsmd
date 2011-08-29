@@ -716,7 +716,7 @@
       // w and w/o barostat
       var baropt = { P0: 0.0, tau: 100.0, ramp: false, dP0dt: 0.01 },
           barostat,
-          thermopt = { T0: 100.0, tau: 0.1, ramp: false, dT0dt: 0.5 },
+          thermopt = { T0: 100.0*jsmd.constants.kB, tau: 0.1, ramp: false, dT0dt: 0.5*jsmd.constants.kB },
           thermostat = jsmd.compute.thermostat( thermopt );
 
       function startAnim() {

@@ -452,138 +452,157 @@
       });
 
       function gostep(n1,n2) {
-        var x,y,z,n,p = new jsmd.Vector(),
-            fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
+        var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
+
+        function s1_geo_fcc() {
+          var x, y, z, n, a, p = new jsmd.Vector();
+
+          // globals
+          ss = Math.round($('#crboxsize').val()); 
+          sv = new jsmd.Vector(ss,ss,ss);
+          sim = new jsmd.Simulation(sv);
+
+          // insert atoms
+          for( x = 0; x < ss/2; ++x ) {
+            for( y = 0; y < ss/2; ++y ) {
+              for( z = 0; z < ss/2; ++z ) {
+                for( n = 0; n < 4; ++n ) {
+                  p.x = (2*x+fcc[n][0])+0.5;
+                  p.y = (2*y+fcc[n][1])+0.5;
+                  p.z = (2*z+fcc[n][2])+0.5;
+                  a = new jsmd.Atom(p);
+                  a.p.wrap(sv);
+                  a.v.x = 0.5*(Math.random()-0.5);
+                  a.v.y = 0.5*(Math.random()-0.5);
+                  a.v.z = 0.5*(Math.random()-0.5);
+                  a.t = n;
+                  sim.atoms.push(a);
+                }   
+              }
+            }
+          }
+        }
+        function s1_geo_nano() {
+          var r = parseFloat($('#npradius').val()), r2=r*r, half,
+              x, y, z, n, a, p = new jsmd.Vector();
+          
+          // globals
+          ss = r*8.0; 
+          sv = new jsmd.Vector(ss,ss,ss);
+          sim = new jsmd.Simulation(sv);
+          
+          // insert atoms
+          half = jsmd.Vector.scale(sv,0.5);
+          for( x = -ss/4; x < ss/4; ++x ) {
+            for( y = -ss/4; y < ss/4; ++y ) {
+              for( z = -ss/4; z < ss/4; ++z ) {
+                for( n = 0; n < 4; ++n ) {
+                  p.x = (2*x+fcc[n][0])+0.5;
+                  p.y = (2*y+fcc[n][1])+0.5;
+                  p.z = (2*z+fcc[n][2])+0.5;
+                  if( p.len2() <= r2 ) {
+                    p.add(half)
+                    a = new jsmd.Atom(p);
+                    a.p.wrap(sv);
+                    a.v.x = 0.5*(Math.random()-0.5);
+                    a.v.y = 0.5*(Math.random()-0.5);
+                    a.v.z = 0.5*(Math.random()-0.5);
+                    sim.atoms.push(a);
+                  }
+                }   
+              }
+            }
+          }
+        }
+        function s1_geo_gas() {
+          var num = parseInt($('#sgnum').val()),
+              temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
+              rmin = parseFloat($('#sgminr').val()),
+              limit = $('#sglim').attr('checked'),
+              dirty, attempt = 1,
+              a,n,i,w,x1,x2,v2 = 0.0,gr=[];
+          
+          // globals
+          ss = parseFloat($('#sglen').val());
+          sv = new jsmd.Vector(ss,ss,ss);
+          sim = new jsmd.Simulation(sv);
+
+          // create and position atoms
+          for( n = 0; n < num; ++n ) {
+            // create atom at random position
+            a = new jsmd.Atom( jsmd.Vector.random(sv) );
+            a.t = n % 4;
+            sim.atoms.push(a);
+          }
+
+          // make sure none are closer than rmin
+          if( limit ) {
+            sim.setCutOff(rmin,0.0);
+            do {
+              if( attempt > 40 ) {
+                $('#step1b').show(400);
+                break;
+              }
+              sim.nl.update();
+              dirty = false;
+              // reposition all atoms that have a non-empty neighbor list (=too close)
+              for( n = 0; n < num; ++n ) {
+                if( sim.nl.data[n].length > 0 ) {
+                  sim.atoms[n].p.random(sv);
+                  dirty = true;
+                }
+              }
+              attempt++;
+            } while(dirty);
+          }
+
+          // assign gaussian distributed velocities
+          for( n = 0; n < num; ++n ) {
+            // fill gaussian random number reservoir
+            if( n%2 == 0 ) {
+              for( i = 0; i<3; ++i ) {
+                do {
+                  x1 = 2.0 * Math.random() - 1.0;
+                  x2 = 2.0 * Math.random() - 1.0;
+                  w = x1 * x1 + x2 * x2;
+                } while ( w >= 1.0 );
+
+                // TODO: consider mass in a two atom gas!
+                w = Math.sqrt( (-2.0 * Math.log( w ) ) / ( w * 1.0 ) ); // I don't know the masses yet!!!! 
+                gr[2*i] = x1 * w;
+                gr[2*i+1] = x2 * w;
+              }
+            }
+               
+            // create atom at random position, with gaussian velocity distribution
+            a = sim.atoms[n];
+            a.v.x = gr[(n%2)*3];
+            a.v.y = gr[(n%2)*3+1];
+            a.v.z = gr[(n%2)*3+2];
+            v2 += a.v.len2() * 1.0; // TODO: mass assumed to be 1.0
+          }
+
+          // rescale to desired temperature
+          w = Math.sqrt( num * 3.0 * temp / v2  );
+          for( n = 0; n < num; ++n ) {
+            sim.atoms[n].v.scale(w);
+          }
+        }
+
+        var x,y,z,n,p = new jsmd.Vector();
         $('#step'+n1).hide(400);
         switch( n1 ) {
           case 1: 
             // construct simulation object 
             switch( $('input:radio[name=sample]:checked').val() ) {
-              case 'fcc' : 
-                ss = Math.round($('#crboxsize').val()); 
-                sv = new jsmd.Vector(ss,ss,ss);
-                sim = new jsmd.Simulation(sv);
-
-                // insert atoms
-                for( x = 0; x < ss/2; ++x ) {
-                  for( y = 0; y < ss/2; ++y ) {
-                    for( z = 0; z < ss/2; ++z ) {
-                      for( n = 0; n < 4; ++n ) {
-                        p.x = (2*x+fcc[n][0])+0.5;
-                        p.y = (2*y+fcc[n][1])+0.5;
-                        p.z = (2*z+fcc[n][2])+0.5;
-                        a = new jsmd.Atom(p);
-                        a.p.wrap(sv);
-                        a.v.x = 0.5*(Math.random()-0.5);
-                        a.v.y = 0.5*(Math.random()-0.5);
-                        a.v.z = 0.5*(Math.random()-0.5);
-                        a.t = n;
-                        sim.atoms.push(a);
-                      }   
-                    }
-                  }
-                }
+              case 'fcc' :
+                s1_geo_fcc();
                 break;
               case 'nano' :
-                var r = parseFloat($('#npradius').val()), r2=r*r, half;
-                ss = r*8.0; 
-                sv = new jsmd.Vector(ss,ss,ss);
-                half = jsmd.Vector.scale(sv,0.5);
-                sim = new jsmd.Simulation(sv);
-                // insert atoms
-                for( x = -ss/4; x < ss/4; ++x ) {
-                  for( y = -ss/4; y < ss/4; ++y ) {
-                    for( z = -ss/4; z < ss/4; ++z ) {
-                      for( n = 0; n < 4; ++n ) {
-                        p.x = (2*x+fcc[n][0])+0.5;
-                        p.y = (2*y+fcc[n][1])+0.5;
-                        p.z = (2*z+fcc[n][2])+0.5;
-                        if( p.len2() <= r2 ) {
-                          p.add(half)
-                          a = new jsmd.Atom(p);
-                          a.p.wrap(sv);
-                          a.v.x = 0.5*(Math.random()-0.5);
-                          a.v.y = 0.5*(Math.random()-0.5);
-                          a.v.z = 0.5*(Math.random()-0.5);
-                          sim.atoms.push(a);
-                        }
-                      }   
-                    }
-                  }
-                }
+                s1_geo_nano();
                 break;
               case 'gas' :
-                var num = parseInt($('#sgnum').val()),
-                    temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
-                    rmin = parseFloat($('#sgminr').val()),
-                    limit = $('#sglim').attr('checked'),
-                    i,w,x1,x2,v2 = 0.0,gr=[];
-                ss = parseFloat($('#sglen').val());
-                sv = new jsmd.Vector(ss,ss,ss);
-                sim = new jsmd.Simulation(sv);
-
-                // create and position atoms
-                for( n = 0; n < num; ++n ) {
-                  // create atom at random position
-                  a = new jsmd.Atom( jsmd.Vector.random(sv) );
-                  a.t = n % 4;
-                  sim.atoms.push(a);
-                }
-
-                // make sure none are closer than rmin
-                if( limit ) {
-                  sim.setCutOff(rmin,0.0);
-                  var dirty, attempt = 1;
-                  do {
-                    if( attempt > 40 ) {
-                      $('#step1b').show(400);
-                      break;
-                    }
-                    sim.nl.update();
-                    dirty = false;
-                    // reposition all atoms that have a non-empty neighbor list (=too close)
-                    for( n = 0; n < num; ++n ) {
-                      if( sim.nl.data[n].length > 0 ) {
-                        sim.atoms[n].p.random(sv);
-                        dirty = true;
-                      }
-                    }
-                    attempt++;
-                  } while(dirty);
-                  //$('#step1b').hide(400);
-                }
-
-                // assign gaussian distributed velocities
-                for( n = 0; n < num; ++n ) {
-                  // fill gaussian random number reservoir
-                  if( n%2 == 0 ) {
-                    for( i = 0; i<3; ++i ) {
-                      do {
-                        x1 = 2.0 * Math.random() - 1.0;
-                        x2 = 2.0 * Math.random() - 1.0;
-                        w = x1 * x1 + x2 * x2;
-                      } while ( w >= 1.0 );
-
-                      // TODO: consider mass in a two atom gas!
-                      w = Math.sqrt( (-2.0 * Math.log( w ) ) / w ); 
-                      gr[2*i] = x1 * w;
-                      gr[2*i+1] = x2 * w;
-                    }
-                  }
-                     
-                  // create atom at random position, with gaussian velocity distribution
-                  a = sim.atoms[n];
-                  a.v.x = gr[(n%2)*3];
-                  a.v.y = gr[(n%2)*3+1];
-                  a.v.z = gr[(n%2)*3+2];
-                  v2 += a.v.len2() * 1.0; // TODO: mass assumed to be 1.0
-                }
-
-                // rescale to desired temperature
-                w = Math.sqrt( num * 3.0 * temp / v2  );
-                for( n = 0; n < num; ++n ) {
-                  sim.atoms[n].v.scale(w);
-                }
+                s1_geo_gas();
                 break;
             }
 

@@ -65,13 +65,13 @@
         box-sizing: border-box;
       }
       
-      #step1,#step1b,#step2,#step3 {
+      #step1,#step2,#step2b,#step3 {
         border: 1px dotted blue;
         background-color: #eeeeee;
         padding: 0.5em;
       }
       h1 { font-family: sans; }
-      #step1b { display: none; border-color: red; margin-bottom: 5px; }
+      #step2b { display: none; border-color: red; margin-bottom: 5px; }
       #matrixbox { display: none }
       #matrixcontainer>table>tbody>tr>td {
         border: 1px solid black;
@@ -93,8 +93,57 @@
     </style>
   </head>
   <body>
-    <!-- Step 1: choose system geometry -->
+    <!-- Step 1: choose interaction potential -->
     <div id="step1">
+      <h1>Atomic interactions</h1>
+      <p>Select an interaction potential and its parameters.</p>
+      <div style="width: 38%; float: right">
+        <div class="box">
+          <b>Number of chemical species in the simulation</b><br/>
+          <select id="numel" onchange="updateNumEl()"/>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+          <ol id="numellist">
+          </ol>
+          <div id="numeltemplate" style="display: none">
+            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name"/> , 
+            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
+          </div>
+        </div>
+        <div class="box" id="matrixbox">
+          <b>Pair interaction matrix</b>
+          <div id="matrixcontainer"></div>
+          <div class="helptext">
+            The interaction matrix determines which potential to use between each pair of atoms of all possible combinations of chemical species. There are as many rows and columns as there are species, and each cell in the matrix contains the interaction of type <i>row</i> with type <i>column</i>. Click on a cell and select the potential potential and its parameters on the left, until all cells appear green.
+          </div>
+        </div>
+      </div>
+      <div style="width: 58%; float: left" id="potentialform">
+        <div class="box radioon">
+          <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
+          <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
+        </div>
+        <div class="box radiooff">
+          <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
+          <label for="pot_lj"><b>Lennard-Jones</b> pair potential</label></br>
+          <p>\[ 
+              V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
+          \]</p>
+          $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
+          $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
+          $r_{cut}=$ <input type="number" value="3.5" id="ljrcut"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+        </div>
+      </div>
+      <br style="clear: both"/>
+      <button onclick="gostep(2,1)">Back</button>
+      <button onclick="gostep(2,3)">Next</button>
+    </div>
+
+    <!-- Step 2: choose system geometry -->
+    <div id="step2">
       <h1>Sample geometry</h1>
       <p>Select a sample geometry and boundary conditions.</p>
       <div style="width: 48%; float: left">
@@ -147,66 +196,18 @@
       <button onclick="gostep(1,2)" onmouseover="$('#step1').find('.optional').stop(true)">Next</button>
     </div>               
 
-    <div id="step1b">
+    <div id="step2b">
       <b>Selected sample is too dense to enforce the chosen minimum distance!</b><br/>
       Your options are:
       <ul>
-        <li><a href="#" onclick="$('#step1b').hide(400); gostep(1,2)">Retry</a> (may help in bordeline cases)</li> 
-        <li><a href="#" onclick="$('#step1b').hide(400); $('#sglim').attr('checked',''); gostep(1,2)">Retry without enforcing minimum distance</a></li>
-        <li><a href="#" onclick="$('#step1b').hide(400); gostep(2,1)">Go back</a> and retry with smaller r<sub>min</sub></li>
+        <li><a href="#" onclick="$('#step2b').hide(400); gostep(1,2)">Retry</a> (may help in bordeline cases)</li> 
+        <li><a href="#" onclick="$('#step2b').hide(400); $('#sglim').attr('checked',''); gostep(1,2)">Retry without enforcing minimum distance</a></li>
+        <li><a href="#" onclick="$('#step2b').hide(400); gostep(2,1)">Go back</a> and retry with smaller r<sub>min</sub></li>
       </li>
       As a workaround you can also attempt to continue and relax the system to a low temperature (press <i>remove heat</i> repeatedly) and then use a thermostat to reach the desired sample temperature.<br/>
-      <button onclick="$('#step1b').hide(400)">Dismiss</button>
+      <button onclick="$('#step2b').hide(400)">Dismiss</button>
     </div>
 
-    <!-- Step 2: choose interaction potential -->
-    <div id="step2">
-      <h1>Atomic interactions</h1>
-      <p>Select an interaction potential and its parameters.</p>
-      <div style="width: 38%; float: right">
-        <div class="box">
-          <b>Number of chemical species in the simulation</b><br/>
-          <select id="numel" onchange="updateNumEl()"/>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
-          <ol id="numellist">
-          </ol>
-          <div id="numeltemplate" style="display: none">
-            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name"/> , 
-            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
-          </div>
-        </div>
-        <div class="box" id="matrixbox">
-          <b>Pair interaction matrix</b>
-          <div id="matrixcontainer"></div>
-          <div class="helptext">
-            The interaction matrix determines which potential to use between each pair of atoms of all possible combinations of chemical species. There are as many rows and columns as there are species, and each cell in the matrix contains the interaction of type <i>row</i> with type <i>column</i>. Click on a cell and select the potential potential and its parameters on the left, until all cells appear green.
-          </div>
-        </div>
-      </div>
-      <div style="width: 58%; float: left" id="potentialform">
-        <div class="box radioon">
-          <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
-          <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
-        </div>
-        <div class="box radiooff">
-          <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
-          <label for="pot_lj"><b>Lennard-Jones</b> pair potential</label></br>
-          <p>\[ 
-              V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
-          \]</p>
-          $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
-          $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
-          $r_{cut}=$ <input type="number" value="3.5" id="ljrcut"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
-        </div>
-      </div>
-      <br style="clear: both"/>
-      <button onclick="gostep(2,1)">Back</button>
-      <button onclick="gostep(2,3)">Next</button>
-    </div>
 
     <!-- Step 3: run stuff -->
     <div id="step3">
@@ -356,7 +357,7 @@
       var jsmd = initJSMD(3),
           ss, sv,
           sc = $('#simcan'),
-          sim, force,
+          sim = new jsmd.Simulation(), force,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
           elements = {
@@ -454,13 +455,13 @@
       function gostep(n1,n2) {
         var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
 
-        function s1_geo_fcc() {
+        function geo_fcc() {
           var x, y, z, n, a, p = new jsmd.Vector();
 
           // globals
           ss = Math.round($('#crboxsize').val()); 
           sv = new jsmd.Vector(ss,ss,ss);
-          sim = new jsmd.Simulation(sv);
+          sim.ss.set(sv);
 
           // insert atoms
           for( x = 0; x < ss/2; ++x ) {
@@ -482,14 +483,14 @@
             }
           }
         }
-        function s1_geo_nano() {
+        function geo_nano() {
           var r = parseFloat($('#npradius').val()), r2=r*r, half,
               x, y, z, n, a, p = new jsmd.Vector();
           
           // globals
           ss = r*8.0; 
           sv = new jsmd.Vector(ss,ss,ss);
-          sim = new jsmd.Simulation(sv);
+          sim.ss.set(sv);
           
           // insert atoms
           half = jsmd.Vector.scale(sv,0.5);
@@ -514,7 +515,7 @@
             }
           }
         }
-        function s1_geo_gas() {
+        function geo_gas() {
           var num = parseInt($('#sgnum').val()),
               temp = parseFloat($('#sgtemp').val()) * jsmd.constants.kB,
               rmin = parseFloat($('#sgminr').val()),
@@ -525,7 +526,7 @@
           // globals
           ss = parseFloat($('#sglen').val());
           sv = new jsmd.Vector(ss,ss,ss);
-          sim = new jsmd.Simulation(sv);
+          sim.ss.set(sv);
 
           // create and position atoms
           for( n = 0; n < num; ++n ) {
@@ -540,7 +541,7 @@
             sim.setCutOff(rmin,0.0);
             do {
               if( attempt > 40 ) {
-                $('#step1b').show(400);
+                $('#step2b').show(400);
                 break;
               }
               sim.nl.update();
@@ -592,55 +593,8 @@
         var x,y,z,n,p = new jsmd.Vector();
         $('#step'+n1).hide(400);
         switch( n1 ) {
-          case 1: 
-            // construct simulation object 
-            switch( $('input:radio[name=sample]:checked').val() ) {
-              case 'fcc' :
-                s1_geo_fcc();
-                break;
-              case 'nano' :
-                s1_geo_nano();
-                break;
-              case 'gas' :
-                s1_geo_gas();
-                break;
-            }
-
-            // add entry for heat influx/outflux
-            sim.work.heat = 0.0;
-
-            // set compute chain
-            sim.computeChain = [ 
-              jsmd.compute.verlet1,    // [0]
-              // PBC or reflect
-              ($('input:radio[name=boundary]:checked').val() == 'period') ? jsmd.compute.wrap : computeMovingWall, // [1]
-              null               ,     // [2] computeForces
-              jsmd.compute.verlet2,    // [3]
-              null,                    // [4]
-              null                     // [5]
-            ];
-
-            // delete existing visualization
-            $('#simcan').empty();
-
-            // stop little animations
-            bcvis.stop();
-
-            // show/hide pistion box depending on BC
-            if( $('input:radio[name=boundary]:checked').val() == 'period' ) {
-              $('#pistonbox').hide();
-              pistonOpt.on=false;
-              barostat = jsmd.compute.berendsenP( baropt );
-              $('#baroaffect').text('volume');
-            } else {
-              $('#pistonbox').show();
-              pistonOpt.on=$('#piston')[0].checked;
-              barostat = jsmd.compute.berendsenP2( baropt );
-              $('#baroaffect').text('temperature');
-            }
-            break;
-          case 2:
-            $('#step1b').hide(400);
+          case 1:
+            // TODO handle this: $('#step2b').hide(400);
             
             // save current formstate into matrix.form
             if( !matrix.form[matrix.ci] ) { matrix.form[matrix.ci] = [] }
@@ -706,6 +660,53 @@
             // misc
             sim.drag = 1.0;
             sim.renderChain = [ ];
+            break;
+
+          case 2: 
+            switch( $('input:radio[name=sample]:checked').val() ) {
+              case 'fcc' :
+                geo_fcc();
+                break;
+              case 'nano' :
+                geo_nano();
+                break;
+              case 'gas' :
+                geo_gas();
+                break;
+            }
+
+            // add entry for heat influx/outflux
+            sim.work.heat = 0.0;
+
+            // set compute chain
+            sim.computeChain = [ 
+              jsmd.compute.verlet1,    // [0]
+              // PBC or reflect
+              ($('input:radio[name=boundary]:checked').val() == 'period') ? jsmd.compute.wrap : computeMovingWall, // [1]
+              null               ,     // [2] computeForces
+              jsmd.compute.verlet2,    // [3]
+              null,                    // [4]
+              null                     // [5]
+            ];
+
+            // delete existing visualization
+            $('#simcan').empty();
+
+            // stop little animations
+            bcvis.stop();
+
+            // show/hide pistion box depending on BC
+            if( $('input:radio[name=boundary]:checked').val() == 'period' ) {
+              $('#pistonbox').hide();
+              pistonOpt.on=false;
+              barostat = jsmd.compute.berendsenP( baropt );
+              $('#baroaffect').text('volume');
+            } else {
+              $('#pistonbox').show();
+              pistonOpt.on=$('#piston')[0].checked;
+              barostat = jsmd.compute.berendsenP2( baropt );
+              $('#baroaffect').text('temperature');
+            }
             break;
           case 3:
             stopAnim();

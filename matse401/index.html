@@ -123,11 +123,11 @@
       </div>
       <div style="width: 58%; float: left" id="potentialform">
         <div class="box radioon">
-          <input value="none" type="radio" name="potential" onchange="updateRadios('#step2')" checked id="pot_none"/> 
+          <input value="none" type="radio" name="potential" onchange="updateRadios('#step1')" checked id="pot_none"/> 
           <label for="pot_none"><b>No interaction</b> (ideal gas)</label></br>
         </div>
         <div class="box radiooff">
-          <input value="lj" type="radio" name="potential" onchange="updateRadios('#step2')" id="pot_lj"/>
+          <input value="lj" type="radio" name="potential" onchange="updateRadios('#step1')" id="pot_lj"/>
           <label for="pot_lj"><b>Lennard-Jones</b> pair potential</label></br>
           <p>\[ 
               V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
@@ -138,8 +138,7 @@
         </div>
       </div>
       <br style="clear: both"/>
-      <button onclick="gostep(2,1)">Back</button>
-      <button onclick="gostep(2,3)">Next</button>
+      <button onclick="gostep(1,2)" onmouseover="$('#step1').find('.optional').stop(true)">Next</button>
     </div>
 
     <!-- Step 2: choose system geometry -->
@@ -148,17 +147,17 @@
       <p>Select a sample geometry and boundary conditions.</p>
       <div style="width: 48%; float: left">
         <div class="box radioon">
-          <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step1')" checked id="sam_fcc"/> 
+          <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step2')" checked id="sam_fcc"/> 
           <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
           $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )
         </div>
         <div class="box radiooff">
-          <input value="nano" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_nano"/> 
+          <input value="nano" type="radio" name="sample" onchange="updateRadios('#step2')" id="sam_nano"/> 
           <label for="sam_nano"><b>Nano particle</b></label></br>
           $r=$ <input type="number" value="3" id="npradius"/> &Aring; (radius)
         </div>
         <div class="box radiooff">
-          <input value="gas" type="radio" name="sample" onchange="updateRadios('#step1')" id="sam_gas"/> 
+          <input value="gas" type="radio" name="sample" onchange="updateRadios('#step2')" id="sam_gas"/> 
           <label for="sam_gas"><b>Gas</b></label></br>
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="100.0" id="sgtemp"/> K (temperature)<br/>
@@ -179,21 +178,22 @@
       </div>
       <div style="width: 48%; float: right">
           <div class="box radioon">
-          <input value="period" type="radio" name="boundary" onchange="updateRadios('#step1')" checked id="bc_period"/> 
+          <input value="period" type="radio" name="boundary" onchange="updateRadios('#step2')" checked id="bc_period"/> 
           <label for="bc_period"><b>Periodic boundaries</b></label></br>
           <span style="color: red">Volume changing <i>piston</i> is <b>not available</b> in this mode!</span>
           <canvas id="bc_can_period" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
           <br style="clear: both"/>
       </div>
         <div class="box radiooff">
-          <input value="reflect" type="radio" name="boundary" onchange="updateRadios('#step1')" id="bc_reflect"/> 
+          <input value="reflect" type="radio" name="boundary" onchange="updateRadios('#step2')" id="bc_reflect"/> 
           <label for="bc_reflect"><b>Reflecting boundaries</b></label></br>
           <canvas id="bc_can_reflect" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
           <br style="clear: both"/>
         </div>
       </div>
       <br style="clear: both"/>
-      <button onclick="gostep(1,2)" onmouseover="$('#step1').find('.optional').stop(true)">Next</button>
+      <button onclick="gostep(2,1)" onmouseover="$('#step2').find('.optional').stop(true)">Back</button>
+      <button onclick="gostep(2,3)" onmouseover="$('#step2').find('.optional').stop(true)">Next</button>
     </div>               
 
     <div id="step2b">
@@ -417,9 +417,6 @@
           );
         } );
 
-        // start animations for boundary condition selection
-        bcvis.start();
-        
         // initialize plotting data tables
         clearTabs();
 
@@ -715,9 +712,9 @@
         }
         switch( n2 ) {
           case 1:
-            bcvis.start();
             break;
           case 2: 
+            bcvis.start();
             updateRadios('#step2');
             break
           case 3: 

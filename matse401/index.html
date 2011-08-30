@@ -316,7 +316,7 @@
         <div class="box">
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
-          T<sub>0</sub>=<input type="number" id="thermt0" value="10" step="1" onchange="thermopt.T0=parseFloat(this.value)*jsmd.constants.kB"/> K,
+          T<sub>0</sub>=<input type="number" id="thermt0" value="100" step="1" onchange="thermopt.T0=parseFloat(this.value)*jsmd.constants.kB"/> K,
           &tau;=<input type="number" value="0.1" step="0.1" onchange="thermopt.tau=parseFloat(this.value)"/> ps
           <div class="optional">
             <input id="thermramp" type="checkbox" 
@@ -716,7 +716,7 @@
       // w and w/o barostat
       var baropt = { P0: 0.0, tau: 100.0, ramp: false, dP0dt: 0.01 },
           barostat,
-          thermopt = { T0: 10.0, tau: 0.1, ramp: false, dT0dt: 0.5 },
+          thermopt = { T0: 100.0*jsmd.constants.kB, tau: 0.1, ramp: false, dT0dt: 0.5*jsmd.constants.kB },
           thermostat = jsmd.compute.thermostat( thermopt );
 
       function startAnim() {

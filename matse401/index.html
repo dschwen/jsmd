@@ -86,6 +86,8 @@
       }
       #step2 { display: none }
       #step3 { display: none }
+
+      .needel1,.needel2,.needel3,.needel4 { display: none }
   
       /*.radiooff, .radiooff p { color: gray; }*/
       div.radioon { border: 1px solid black }
@@ -1118,6 +1120,12 @@
             matrix.cj = j;
           } );
         }
+
+        // update configuration items that depend on number of elements
+        for( i = 1; i <= 4; ++i ) {
+          $('.needel'+i).hide(400);
+        }
+        $('.needel'+(numel)).stop().show(400);
 
         // update element list
         for( i = 0; i < 4; ++i ) {

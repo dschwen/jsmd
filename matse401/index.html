@@ -229,7 +229,7 @@
           <label for="piston">Move piston</label><br/>
           max<sub>z</sub>=<input type="number" value="80.0" onchange="pistonOpt.max=this.value"/> &Aring;,
           min<sub>z</sub>=<input type="number" value="20.0" onchange="pistonOpt.min=this.value"/> &Aring; <br/>
-          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  /> &Aring;/fs
+          v<sub>z</sub>=<input id="pistonvz" type="number" value="0.2" step="0.1" onchange="pistonOpt.sv.z=this.value"  /> &Aring;/ps
           <button onclick="pistonOpt.sv.z *=-1; $('#pistonvz').val(pistonOpt.sv.z)">Reverse</button>
           <div class="helptext">
             The <i>piston</i> is implemented by moving the two box walls perpendicular to the z-axis inward with a velocity of v<sub>z</sub> (negative v<sub>z</sub> move the walls apart). The wall is assumed to have infinite mass and reflected particles will exhibit a momentum transfer, adding 2v<sub>z</sub> to their velocity z-component.
@@ -270,7 +270,7 @@
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
             <option value="7">Simulation step</option>
-            <option value="8">Simulation time [fs]</option>
+            <option value="8">Simulation time [ps]</option>
             <option value="13">Number of atoms</option>
           </select>
           vs. 
@@ -288,7 +288,7 @@
             <option value="11">Thermostat settemperature [K]</option>
             <option value="12">Barostat setpressure [MPa]</option>
             <option value="7">Simulation step</option>
-            <option value="8">Simulation time [fs]</option>
+            <option value="8">Simulation time [ps]</option>
             <option value="13">Number of atoms</option>
           </select>
           <button onclick="getRawData(true)">Get data</button>
@@ -299,13 +299,13 @@
           <label for="baro">Activate barostat (affecting <span id="baroaffect"></span>)</label><br/>
           P<sub>0</sub>=<input type="number" id="barop0" value="0.0" 
                                onchange="baropt.P0=parseFloat(this.value)/jsmd.constants.MPa"/> MPa,
-          &tau;=<input type="number" value="100.0" onchange="baropt.tau=parseFloat(this.value)"/> fs
+          &tau;=<input type="number" value="100.0" onchange="baropt.tau=parseFloat(this.value)"/> ps
           <div class="optional">
             <input id="baroramp" type="checkbox" 
                    onclick="baropt.ramp=this.checked; $('#barop0').attr('disabled', baropt.ramp);">
             <label for="baroramp">ramp barostat setpressure</label><br/>
             $\frac{dP_0}{dt}$=<input type="number" value="0.01" step="0.01" 
-                                           onchange="baropt.dP0dt=parseFloat(this.value)/jsmd.constants.MPa"/> MPa/fs
+                                           onchange="baropt.dP0dt=parseFloat(this.value)/jsmd.constants.MPa"/> MPa/ps
           </div>
           <div class="helptext">
             A barostat controls the <i>pressure</i> in the simulation cell. Pressure is lowered by expanding the cell and increased by shrinking the cell.
@@ -317,12 +317,12 @@
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
           T<sub>0</sub>=<input type="number" id="thermt0" value="10" step="1" onchange="thermopt.T0=parseFloat(this.value)*jsmd.constants.kB"/> K,
-          &tau;=<input type="number" value="0.1" step="0.1" onchange="thermopt.tau=parseFloat(this.value)"/> fs
+          &tau;=<input type="number" value="0.1" step="0.1" onchange="thermopt.tau=parseFloat(this.value)"/> ps
           <div class="optional">
             <input id="thermramp" type="checkbox" 
                    onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
             <label for="thermramp">ramp thermostat settemperature</label><br/>
-            $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/fs
+            $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/ps
           </div>
           <div class="helptext">
             A thermostat controls the <i>temperature</i> in the simulation cell. jsMD implements a <a href="http://en.wikipedia.org/wiki/Berendsen_thermostat">Berendsen thermostat</a> that regulates temperature through simple velocity rescaling.

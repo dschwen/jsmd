@@ -610,11 +610,6 @@
               sim.types[i] = t;
             }
             
-            // initialize render3d (container must not be hidden!)
-            $('#step3').css( { display: "block", visibility: "hidden" } )
-            render3d = initRender3D( sim, $('#simcan')[0] );
-            $('#step3').css( { display: "none", visibility: "visible" } )
-      
             // loop over interaction settings
             var rcut, rcutmax = 0.0;
             for( i = 0; i < numel; ++i ) {
@@ -704,6 +699,12 @@
               barostat = jsmd.compute.berendsenP2( baropt );
               $('#baroaffect').text('temperature');
             }
+
+            // initialize render3d (container must not be hidden!)
+            $('#step3').css( { display: "block", visibility: "hidden" } )
+            render3d = initRender3D( sim, $('#simcan')[0] );
+            $('#step3').css( { display: "none", visibility: "visible" } )
+      
             break;
           case 3:
             stopAnim();

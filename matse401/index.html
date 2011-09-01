@@ -275,7 +275,7 @@
           </select>
         </div>
 -->
-        <div class="box green">
+        <div class="box green" id="plotoptions">
           <input id="gatheron" type="checkbox" onclick="gatheron=this.checked">
           <label for="gatheron">Gather data</label>
           <input id="ploton" type="checkbox" onclick="ploton=this.checked" checked>
@@ -503,7 +503,7 @@
                   a.v.x = 0.5*(Math.random()-0.5);
                   a.v.y = 0.5*(Math.random()-0.5);
                   a.v.z = 0.5*(Math.random()-0.5);
-                  a.t = n;
+                  a.t = (n>=sim.types.length) ? 0  : n;
                   sim.atoms.push(a);
                 }   
               }
@@ -559,7 +559,8 @@
           for( n = 0; n < num; ++n ) {
             // create atom at random position
             a = new jsmd.Atom( jsmd.Vector.random(sv) );
-            a.t = n % 4;
+            a.t = 0;
+            //a.t = (n>=sim.types.length) ? 0  : n;
             sim.atoms.push(a);
           }
 
@@ -632,6 +633,7 @@
 
             // set elements
             var i, j, numel = parseInt($('#numel option:selected').val());
+            sim.types = [];
             for( i = 0; i < numel; i++ ) { 
               t = new jsmd.AtomType();
               t.r = parseFloat($('#numelmass_'+i).val());
@@ -721,11 +723,15 @@
             // show/hide pistion box depending on BC
             if( $('input:radio[name=boundary]:checked').val() == 'period' ) {
               $('#pistonbox').hide();
+              $('#plotoptions').find('option[value="1"]').attr('disabled','disabled');
+              $('#plotoptions').find('option[value="2"]').attr('disabled','disabled');
               pistonOpt.on=false;
               barostat = jsmd.compute.berendsenP( baropt );
               $('#baroaffect').text('volume');
             } else {
               $('#pistonbox').show();
+              $('#plotoptions').find('option[value="1"]').attr('disabled','');
+              $('#plotoptions').find('option[value="2"]').attr('disabled','');
               pistonOpt.on=$('#piston')[0].checked;
               barostat = jsmd.compute.berendsenP2( baropt );
               $('#baroaffect').text('temperature');

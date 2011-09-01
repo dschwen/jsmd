@@ -572,7 +572,7 @@
           for( n = 0; n < num; ++n ) {
             // create atom at random position
             a = new jsmd.Atom( jsmd.Vector.random(sv) );
-            a.t = 0;
+            a.t = Math.floor( Math.random() * sim.types.length );
             //a.t = (n>=sim.types.length) ? 0  : n;
             sim.atoms.push(a);
           }
@@ -610,7 +610,7 @@
                 } while ( w >= 1.0 );
 
                 // TODO: consider mass in a two atom gas!
-                w = Math.sqrt( (-2.0 * Math.log( w ) ) / ( w * 1.0 ) ); // I don't know the masses yet!!!! 
+                w = Math.sqrt( (-2.0 * Math.log( w ) ) / w );
                 gr[2*i] = x1 * w;
                 gr[2*i+1] = x2 * w;
               }
@@ -618,9 +618,10 @@
                
             // create atom at random position, with gaussian velocity distribution
             a = sim.atoms[n];
-            a.v.x = gr[(n%2)*3];
-            a.v.y = gr[(n%2)*3+1];
-            a.v.z = gr[(n%2)*3+2];
+            w = Math.sqrt( sim.types[a.t].m );
+            a.v.x = gr[(n%2)*3]/w;
+            a.v.y = gr[(n%2)*3+1]/w;
+            a.v.z = gr[(n%2)*3+2]/w;
             v2 += a.v.len2() * 1.0; // TODO: mass assumed to be 1.0
           }
 
@@ -649,7 +650,7 @@
             sim.types = [];
             for( i = 0; i < numel; i++ ) { 
               t = new jsmd.AtomType();
-              t.r = parseFloat($('#numelmass_'+i).val());
+              t.m = parseFloat($('#numelmass_'+i).val());
               t.name = $('#numelname_'+i).val();
               t.color3d = elements.color3d[i];
               sim.types[i] = t;

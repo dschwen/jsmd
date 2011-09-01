@@ -384,7 +384,7 @@
       var jsmd = initJSMD(3),
           ss, sv,
           sc = $('#simcan'),
-          sim = new jsmd.Simulation(), force, rcutpad = 0.5,
+          sim, force, rcutpad = 0.5,
           t, c = 0, a, p = new jsmd.Vector, x, y, i,
           matrix = { ci:0, cj:0, form:[] },
           elements = {
@@ -477,6 +477,19 @@
             .mouseenter( function(){ $(e).stop(true,true).delay(500).slideDown(400); } )
             .mouseleave( function(){ $(e).stop(true,true).delay(500).slideUp(400); } )
         } );
+        
+        // build and initialize simulation object
+        sim = new jsmd.Simulation();
+        
+        // set compute chain
+        sim.computeChain = [ 
+          jsmd.compute.verlet1,    // [0]
+          null,                    // [1] PBC or reflect
+          null               ,     // [2] computeForces
+          jsmd.compute.verlet2,    // [3]
+          null,                    // [4]
+          null                     // [5]
+        ];
       });
 
       function gostep(n1,n2) {
@@ -669,7 +682,7 @@
                   );
 
                   // set interaction matrix (1x1)
-                  sim.computeChain[2] = jsmd.compute.forces;
+                sim.computeChain[2] = jsmd.compute.forces;
                 }
 
                 // insert force into interaction matrix
@@ -703,22 +716,16 @@
             // add entry for heat influx/outflux
             sim.work.heat = 0.0;
 
-            // set compute chain
-            sim.computeChain = [ 
-              jsmd.compute.verlet1,    // [0]
-              // PBC or reflect
-              ($('input:radio[name=boundary]:checked').val() == 'period') ? jsmd.compute.wrap : computeMovingWall, // [1]
-              null               ,     // [2] computeForces
-              jsmd.compute.verlet2,    // [3]
-              null,                    // [4]
-              null                     // [5]
-            ];
-
             // delete existing visualization
             $('#simcan').empty();
 
             // stop little animations
             bcvis.stop();
+
+            // setup boundary condition in the simulation object
+            // TODO: update neighborlist generation code accordingly!
+            sim.computeChain[1] = ($('input:radio[name=boundary]:checked').val() == 'period') ? 
+              jsmd.compute.wrap : computeMovingWall;
 
             // show/hide pistion box depending on BC
             if( $('input:radio[name=boundary]:checked').val() == 'period' ) {

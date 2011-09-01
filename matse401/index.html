@@ -152,6 +152,17 @@
           <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step2')" checked id="sam_fcc"/> 
           <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
           $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )
+          <div class="needel2">
+            <div class="box radioon">
+              <input value="l12" type="radio" name="sample_fcc" onchange="updateRadios('#step2')" checked id="sam_fcc_l12"/>
+              <label for="sam_fcc_"><b>L1<sub>2</sub> ordered phase</b></label></br>
+            </div>
+            <div class="box radiooff">
+              <input value="rand" type="radio" name="sample_fcc" onchange="updateRadios('#step2')" id="sam_fcc_rand"/>
+              <label for="sam_fcc_"><b>L1<sub>2</sub> ordered phase</b></label></br>
+              $c_2=$ <input type="number" value="25" id="sfrandc"/>% (concentration of element 2)
+            </div>
+          </div>
         </div>
         <div class="box radiooff">
           <input value="nano" type="radio" name="sample" onchange="updateRadios('#step2')" id="sam_nano"/> 
@@ -164,6 +175,17 @@
           $N=$ <input type="number" value="1000" id="sgnum"/> (number of atoms)<br/>
           $T=$ <input type="number" value="100.0" id="sgtemp"/> K (temperature)<br/>
           $L=$ <input type="number" value="40.0" id="sglen"/> &Aring; (box size, $V=L^3$)<br/>
+          <div>
+            <span class="needel2 needel3 needel4">
+              $c_2=$ <input type="number" value="0.0" id="sgrandc2"/>% (concentration of element 2)
+            </span>
+            <span class="needel3 needel4"><br/>
+              $c_3=$ <input type="number" value="0.0" id="sgrandc3"/>% (concentration of element 3)
+            </span>
+            <span class="needel4"><br/>
+              $c_4=$ <input type="number" value="0.0" id="sgrandc4"/>% (concentration of element 4)
+            </span>
+          </div>
           <div class="optional">
             <input id="sglim" type="checkbox" checked>
             <label for="sglim">enforce minimum separation distance for initial state</label><br/>
@@ -179,13 +201,13 @@
         </div>
       </div>
       <div style="width: 48%; float: right">
-          <div class="box radioon">
+        <div class="box radioon">
           <input value="period" type="radio" name="boundary" onchange="updateRadios('#step2')" checked id="bc_period"/> 
           <label for="bc_period"><b>Periodic boundaries</b></label></br>
           <span style="color: red">Volume changing <i>piston</i> is <b>not available</b> in this mode!</span>
           <canvas id="bc_can_period" style="float: right; border: 1px solid black" width="50" height="50"></canvas>
           <br style="clear: both"/>
-      </div>
+        </div>
         <div class="box radiooff">
           <input value="reflect" type="radio" name="boundary" onchange="updateRadios('#step2')" id="bc_reflect"/> 
           <label for="bc_reflect"><b>Reflecting boundaries</b></label></br>

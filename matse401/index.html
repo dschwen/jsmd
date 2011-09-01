@@ -727,7 +727,10 @@
             bcvis.start();
             updateRadios('#step2');
             break
-          case 3: 
+          case 3:
+            // update piston position
+            $('#pistonz').text(sim.ss.z);
+
             stopAnim = startAnim();
             stopCompute = startCompute();
             break;
@@ -967,7 +970,11 @@
         this.ss.sub(mwss);
         this.ss.sub(mwss);
         dV -= this.ss.vol();
-        $('#pistonz').text(this.ss.z);
+        
+        // update piston position
+        if( pistonOpt.on ) {
+          $('#pistonz').text(this.ss.z);
+        }
 
         // test for min max
         if( ( mwss.z > 0 && this.ss.z <= pistonOpt.min ) || 

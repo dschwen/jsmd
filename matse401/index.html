@@ -250,7 +250,7 @@
           </select>
         </div>
 -->
-        <div class="box green">
+        <div class="box green" id="plotoptions">
           <input id="gatheron" type="checkbox" onclick="gatheron=this.checked">
           <label for="gatheron">Gather data</label>
           <input id="ploton" type="checkbox" onclick="ploton=this.checked" checked>
@@ -617,11 +617,15 @@
             // show/hide pistion box depending on BC
             if( $('input:radio[name=boundary]:checked').val() == 'period' ) {
               $('#pistonbox').hide();
+              $('#plotoptions').find('option[value="1"]').attr('disabled','disabled');
+              $('#plotoptions').find('option[value="2"]').attr('disabled','disabled');
               pistonOpt.on=false;
               barostat = jsmd.compute.berendsenP( baropt );
               $('#baroaffect').text('volume');
             } else {
               $('#pistonbox').show();
+              $('#plotoptions').find('option[value="1"]').attr('disabled','');
+              $('#plotoptions').find('option[value="2"]').attr('disabled','');
               pistonOpt.on=$('#piston')[0].checked;
               barostat = jsmd.compute.berendsenP2( baropt );
               $('#baroaffect').text('temperature');

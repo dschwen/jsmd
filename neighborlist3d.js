@@ -16,7 +16,9 @@ Neighborlist3d.prototype.update = function(dr) {
   var sim = this.lc.sim;
   // check if update is necessary (call without parameter to force update)
   this.dr += 2.0*dr;
-  if( this.dr < sim.rp && this.data !== null ) { 
+  if( this.dr < sim.rp && 
+      this.data !== null &&
+      this.data.length == this.lc.sim.atoms.length ) { 
     return;
   }
   this.dr = 0.0;

@@ -20,6 +20,7 @@ function initRender3D( sim, container ) {
     var t = sim.types[i];
     t.colorThree = new THREE.Color( 0xffffff );
     t.colorThree.setRGB( t.color3d.r, t.color3d.g, t.color3d.b );
+    t.scaleThree = Math.pow( t.m, 0.3333 );
   }
 
   // select renderer
@@ -140,9 +141,9 @@ function initRender3D( sim, container ) {
       }
       while( sim.atoms.length > particles.children.length ) {
         var particle = new THREE.Particle( new THREE.ParticleCanvasMaterial( { color: 0xee0000, program: fallbackparticle } ) );
-        particle.scale.x = 0.5;
-        particle.scale.y = 0.5;
-        particle.scale.z = 0.5;
+        particle.scale.x = 0.25 * sim.types[sim.atoms[i].t].scaleThree;
+        particle.scale.y = 0.25 * sim.types[sim.atoms[i].t].scaleThree;
+        particle.scale.z = 0.25 * sim.types[sim.atoms[i].t].scaleThree;
         particles.addChild(particle);
       }
       // update vertices

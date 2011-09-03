@@ -114,7 +114,9 @@ function initJSMD(dim) {
 
     // box dimensions
     this.ss = new Vector();
-    this.ss.set(ss);
+    if( ss !== undefined ) {
+      this.ss.set(ss);
+    }
 
     // canvas for visualization
     this.canvas = {};

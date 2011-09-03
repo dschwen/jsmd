@@ -1,12 +1,13 @@
 function Neighborlist3d(lc) {
   this.lc = lc;
   this.dr = 0.0;
-  this.data = [];
+  this.data = null;
   this.count = 0;
   this.pbc = true;
 }
 
 Neighborlist3d.prototype.clear = function() {
+  this.data = [];
   for( var i = 0; i < this.lc.sim.atoms.length; ++i ) {
     this.data[i] = [];
   }
@@ -15,7 +16,9 @@ Neighborlist3d.prototype.update = function(dr) {
   var sim = this.lc.sim;
   // check if update is necessary (call without parameter to force update)
   this.dr += 2.0*dr;
-  if( this.dr < sim.rp ) { 
+  if( this.dr < sim.rp && 
+      this.data !== null &&
+      this.data.length == this.lc.sim.atoms.length ) { 
     return;
   }
   this.dr = 0.0;

@@ -115,8 +115,8 @@
           <ol id="numellist">
           </ol>
           <div id="numeltemplate" style="display: none">
-            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name"/> , 
-            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="1"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
+            <div style="display: inline-block; width: 1em; height: 1em; border: 1px solid black"></div> name: <input type="text" title="descriptive name" value="Krypton"/> , 
+            <span style="white-space: nowrap">m<sub></sub>=<input title="atomic mass" type="number" value="83.798"> <a class="wp" href="Atomic_mass_unit">amu</a></span>
           </div>
         </div>
         <div class="box" id="matrixbox">
@@ -138,9 +138,9 @@
           <p>\[ 
               V(r)=4 \varepsilon \left[ \left( \frac {\sigma} {r} \right)^{12} - \left( \frac {\sigma} {r} \right)^6 \right]
           \]</p>
-          $\varepsilon=$ <input type="number" value="50.0" id="ljepsilon"/> K (binding energy)<br/>
-          $\sigma=$ <input type="number" value="1.295" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
-          $r_{cut}=$ <input type="number" value="3.5" id="ljrcut"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
+          $\varepsilon=$ <input type="number" value="175.0" id="ljepsilon"/> K (binding energy)<br/>
+          $\sigma=$ <input type="number" value="3.65" id="ljsigma"/> &Aring; (length scale, $2^{\frac16}\sigma=r_m$ is equilibrium dimer separation distance)<br/>
+          $r_{cut}=$ <input type="number" value="9.125" id="ljrcut"/> &Aring; (all atomic interactions beyond $r_{cut}$ are ignored. recommended: $r_{cut}\approx2.5\sigma$)
         </div>
       </div>
       <br style="clear: both"/>
@@ -155,7 +155,8 @@
         <div class="box radioon">
           <input value="fcc" type="radio" name="sample" onchange="updateRadios('#step2')" checked id="sam_fcc"/> 
           <label for="sam_fcc"><b>Crystalline solid</b> (face centered cubic lattice)</label></br>
-          $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )
+          $d=$ <input type="number" value="8" id="crboxsize"/> (crystal size $d\times d\times d$ unit cells )</br>
+          $a_0=$ <input type="number" value="2.819" id="crlatconst"/> &Aring; (lattice constant)<!-- sigma/1.295 -->
           <ul class="needel2">
             <li>Two elements selected. Building <b>L1<sub>2</sub> ordered phase</b>.</li>
           </ul>
@@ -511,22 +512,27 @@
       function gostep(n1,n2) {
         var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
 
+        function geo_init_temperature() {
+        }
+        
         function geo_fcc() {
-          var x, y, z, n, a, p = new jsmd.Vector();
+          var x, y, z, n, a, p = new jsmd.Vector(), 
+              d = Math.round($('#crboxsize').val()), 
+              a0 = parseFloat($('#crlatconst').val());
 
           // globals
-          ss = Math.round($('#crboxsize').val()); 
+          ss = d*a0; 
           sv = new jsmd.Vector(ss,ss,ss);
           sim.ss.set(sv);
 
           // insert atoms
-          for( x = 0; x < ss/2; ++x ) {
-            for( y = 0; y < ss/2; ++y ) {
-              for( z = 0; z < ss/2; ++z ) {
+          for( x = 0; x < d/2; ++x ) {
+            for( y = 0; y < d/2; ++y ) {
+              for( z = 0; z < d/2; ++z ) {
                 for( n = 0; n < 4; ++n ) {
-                  p.x = (2*x+fcc[n][0])+0.5;
-                  p.y = (2*y+fcc[n][1])+0.5;
-                  p.z = (2*z+fcc[n][2])+0.5;
+                  p.x = a0*(2*x+fcc[n][0])+0.5;
+                  p.y = a0*(2*y+fcc[n][1])+0.5;
+                  p.z = a0*(2*z+fcc[n][2])+0.5;
                   a = new jsmd.Atom(p);
                   a.p.wrap(sv);
                   a.v.x = 0.5*(Math.random()-0.5);

@@ -38,7 +38,7 @@ function initRender3D( sim, container ) {
   geometry = new THREE.Geometry();
 
   var sprite = THREE.ImageUtils.loadTexture( "ball.png" );
-  var material = new THREE.ParticleBasicMaterial( { size: 1.5, map: sprite, vertexColors: true } );
+  var material = new THREE.ParticleBasicMaterial( { size: 5.0, map: sprite, vertexColors: true } );
 
   // atoms (added dynamically)
   particles = webgl ? new THREE.ParticleSystem( geometry, material ) : new THREE.Object3D();

@@ -317,6 +317,8 @@
             <option value="1">Work performed by piston (atomic) [eV]</option>
             <option value="2">Work performed by piston (p dV) [eV]</option>
             <option value="14">Total kinetic energy [eV]</option>
+            <option value="15">Total potential energy [eV]</option>
+            <option value="16">Total internal energy [eV]</option>
             <!--<option value="4">Heatcapacity</option>-->
             <option value="3">Added heat [eV]</option>
             <option value="9">Heat input by thermostat [eV]</option>
@@ -335,6 +337,8 @@
             <option value="1">Work performed by piston (atomic) [eV]</option>
             <option value="2">Work performed by piston (p dV) [eV]</option>
             <option value="14">Total kinetic energy [eV]</option>
+            <option value="15">Total potential energy [eV]</option>
+            <option value="16">Total internal energy [eV]</option>
             <!--<option value="4">Heatcapacity</option>-->
             <option value="3">Added heat [eV]</option>
             <option value="9">Heat input by thermostat [eV]</option>
@@ -871,7 +875,7 @@
       }
       function clearTabs() {
         // clear gathered data
-        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
+        tabs = [ [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[] ];
 
         // reset work counters for thermo, barostat, and add heat
         if( sim ) {
@@ -898,6 +902,8 @@
         tabs[12].push( baropt.P0 * jsmd.constants.MPa );
         tabs[13].push( sim.atoms.length );
         tabs[14].push( sim.Ekin * jsmd.constants.eV );
+        tabs[15].push( calcener ? ( sim.Epot * jsmd.constants.eV ) : 0.0 );
+        tabs[16].push( calcener ? ( (sim.Epot+sim.Ekin) * jsmd.constants.eV ) : 0.0 );
         rcount = 0;
       }
       function replot() {
@@ -939,9 +945,9 @@
               showT.text(Math.round( 10000 * ( averages.T / jsmd.constants.kB ) )/10000);
               if( calcener ) {
                 sim.updateEnergy();
-                showEpot.text(sim.Epot);
-                showEkin.text(sim.Ekin);
-                showEtot.text(sim.Epot+sim.Ekin);
+                showEpot.text(sim.Epot * jsmd.constants.eV );
+                showEkin.text(sim.Ekin * jsmd.constants.eV );
+                showEtot.text( (sim.Epot+sim.Ekin) * jsmd.constants.eV );
               }
               count = 0;
               rcount++;

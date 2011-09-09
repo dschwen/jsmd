@@ -370,7 +370,7 @@ function initJSMD(dim) {
 
       // calculate temperature
       v2 = this.atoms[i].v.len2();
-      this.Ekin += this.types[this.atoms[i].t].m * v2;
+      this.Ekin += m * v2;
       
       // maximum velocity and acceleration
       vmax = Math.max( vmax, v2 );

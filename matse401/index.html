@@ -93,6 +93,7 @@
       
       .needel1,.needel2,.needel3,.needel4 { display: none }
   
+      #enerbox { display: none }
       /*.radiooff, .radiooff p { color: gray; }*/
       div.radioon { border: 1px solid black }
       .radiooff { opacity: 0.35 }
@@ -257,8 +258,14 @@
         <div class="box blue">
           <div><i><a class="wp" href="Temperature">T = </a><span id="showT"></span></i> <a class="wp" href="Kelvin">K</a></div>
           <div><i><a class="wp" href="Pressure">P = </a><span id="showP"></span></i> <a class="wp" href="Pascal_(unit)">MPa</a></div>
+          <div id="enerbox">
+            <div><i><a class="wp" href="Potential_energy">E<sub>pot</sub> = </a><span id="showEpot"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
+            <div><i><a class="wp" href="Kinetic_energy">E<sub>kin</sub> = </a><span id="showEkin"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
+            <div><i><a class="wp" href="Internal_energy">E<sub>tot</sub> = </a><span id="showEtot"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
+          </div>
           <div class="optional">
-          calculate total energy
+          <input id="calcener" type="checkbox" onclick="calcener=this.checked ? $('#enerbox').show(400) : $('#enerbox').hide(400)">
+          <label for="calcener">Calculate and display energies</label><br/>
           </div>
         </div>
 
@@ -416,6 +423,10 @@
           logp = $('#log'),
           showT = $('#showT'),
           showP = $('#showP'),
+          calcener = false,
+          showEpot = $('#showEpot'),
+          showEkin = $('#showEkin'),
+          showEtot = $('#showEtot'),
           render3d, stopAnim, stopCompute, ploton = true, gatheron = false,
           compOpt = { samples: 40, equilibrate: 20, loopSteps: 1 }, 
           pistonOpt = { max: 80, min: 20.0, sv: new jsmd.Vector(0,0,0.2), on: false, U: 0.0, PdV: 0.0 },
@@ -926,6 +937,12 @@
               averages = runningAverage.average();
               showP.text(Math.round( 10000 * ( averages.P * jsmd.constants.MPa ) )/10000);
               showT.text(Math.round( 10000 * ( averages.T / jsmd.constants.kB ) )/10000);
+              if( calcener ) {
+                sim.updateEnergy();
+                showEpot.text(sim.Epot);
+                showEkin.text(sim.Ekin);
+                showEtot.text(sim.Epot+sim.Ekin);
+              }
               count = 0;
               rcount++;
               if( gatheron && rcount > compOpt.equilibrate ) {

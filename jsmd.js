@@ -181,7 +181,46 @@ function initJSMD(dim) {
     this.lc = new Linkcell(this);
     this.nl = new Neighborlist(this.lc);
   }
- 
+  Simulation.prototype.setTemperature = function(T) {
+    // initialize simulation temperature with a new gaussian velocity distribution at T
+    var n,i,w,a,
+        gr = [], v2=0.0, num=this.atoms.length;
+        
+    // assign gaussian velocities
+    for( n = 0; n < num; ++n ) {
+      // fill gaussian random number reservoir
+      if( n%2 == 0 ) {
+        for( i = 0; i<3; ++i ) {
+          do {
+            x1 = 2.0 * Math.random() - 1.0;
+            x2 = 2.0 * Math.random() - 1.0;
+            w = x1 * x1 + x2 * x2;
+          } while ( w >= 1.0 );
+
+          w = Math.sqrt( (-2.0 * Math.log( w ) ) / w );
+          gr[2*i] = x1 * w;
+          gr[2*i+1] = x2 * w;
+        }
+      }
+          
+      // assign gaussian velocity divided by squareroot of mass
+      a = this.atoms[n];
+      w = Math.sqrt( this.types[a.t].m );
+      a.v.x = gr[(n%2)*3]/w;
+      a.v.y = gr[(n%2)*3+1]/w;
+      if( dim == 3 ) { 
+        a.v.z = gr[(n%2)*3+2]/w;
+      }
+      v2 += a.v.len2();
+    }
+
+    // rescale to desired temperature
+    w = Math.sqrt( num * 3.0 * T / v2  );
+    for( n = 0; n < num; ++n ) {
+      this.atoms[n].v.scale(w);
+    }
+  }
+  
   function computeForces(store) {
     var i,j,k,  // integer
         F,dr, // float

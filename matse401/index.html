@@ -530,9 +530,6 @@
       function gostep(n1,n2) {
         var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]];
 
-        function geo_init_temperature() {
-        }
-        
         function geo_fcc() {
           var x, y, z, n, a, p = new jsmd.Vector(), 
               d = Math.round($('#crboxsize').val()), 
@@ -553,15 +550,13 @@
                   p.z = a0*(2*z+fcc[n][2])+0.5;
                   a = new jsmd.Atom(p);
                   a.p.wrap(sv);
-                  a.v.x = 0.5*(Math.random()-0.5);
-                  a.v.y = 0.5*(Math.random()-0.5);
-                  a.v.z = 0.5*(Math.random()-0.5);
                   a.t = (n>=sim.types.length) ? 0  : n;
                   sim.atoms.push(a);
                 }   
               }
             }
           }
+          sim.setTemperature(1.0*jsmd.constants.kB);
         }
         function geo_nano() {
           var r = parseFloat($('#npradius').val()), r2=r*r, half,
@@ -585,15 +580,13 @@
                     p.add(half)
                     a = new jsmd.Atom(p);
                     a.p.wrap(sv);
-                    a.v.x = 0.5*(Math.random()-0.5);
-                    a.v.y = 0.5*(Math.random()-0.5);
-                    a.v.z = 0.5*(Math.random()-0.5);
                     sim.atoms.push(a);
                   }
                 }   
               }
             }
           }
+          sim.setTemperature(1.0*jsmd.constants.kB);
         }
         function geo_gas() {
           var num = parseInt($('#sgnum').val()),
@@ -638,38 +631,7 @@
             } while(dirty);
           }
 
-          // assign gaussian distributed velocities
-          for( n = 0; n < num; ++n ) {
-            // fill gaussian random number reservoir
-            if( n%2 == 0 ) {
-              for( i = 0; i<3; ++i ) {
-                do {
-                  x1 = 2.0 * Math.random() - 1.0;
-                  x2 = 2.0 * Math.random() - 1.0;
-                  w = x1 * x1 + x2 * x2;
-                } while ( w >= 1.0 );
-
-                // TODO: consider mass in a two atom gas!
-                w = Math.sqrt( (-2.0 * Math.log( w ) ) / w );
-                gr[2*i] = x1 * w;
-                gr[2*i+1] = x2 * w;
-              }
-            }
-               
-            // create atom at random position, with gaussian velocity distribution
-            a = sim.atoms[n];
-            w = Math.sqrt( sim.types[a.t].m );
-            a.v.x = gr[(n%2)*3]/w;
-            a.v.y = gr[(n%2)*3+1]/w;
-            a.v.z = gr[(n%2)*3+2]/w;
-            v2 += a.v.len2();
-          }
-
-          // rescale to desired temperature
-          w = Math.sqrt( num * 3.0 * temp / v2  );
-          for( n = 0; n < num; ++n ) {
-            sim.atoms[n].v.scale(w);
-          }
+          sim.setTemperature(temp);
         }
 
         var x,y,z,n,p = new jsmd.Vector();

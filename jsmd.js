@@ -183,8 +183,8 @@ function initJSMD(dim) {
   }
   Simulation.prototype.setTemperature = function(T) {
     // initialize simulation temperature with a new gaussian velocity distribution at T
-    var n,i,w,a,
-        gr = [], v2=0.0, num=this.atoms.length;
+    var n,i,w,a,tm = 0.0,
+        gr = [], v2=0.0, num=this.atoms.length, cm = new Vector();
         
     // assign gaussian velocities
     for( n = 0; n < num; ++n ) {
@@ -211,6 +211,17 @@ function initJSMD(dim) {
       if( dim == 3 ) { 
         a.v.z = gr[(n%2)*3+2]/w;
       }
+      
+      // obtain center of mass momentum
+      cm.add( Vector.scale(a.v,this.types[a.t].m) );
+      tm += this.types[a.t].m;
+    }
+
+    // subtract center of mass momentum and get total kinetic Energy
+    cm.scale(1.0/tm);
+    for( n = 0; n < num; n++ ) {
+      a = this.atoms[n];
+      a.v.sub(cm);
       v2 += a.v.len2();
     }
 

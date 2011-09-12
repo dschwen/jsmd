@@ -141,6 +141,7 @@ function initRender3D( sim, container ) {
       }
       while( sim.atoms.length > particles.children.length ) {
         var particle = new THREE.Particle( new THREE.ParticleCanvasMaterial( { color: 0xee0000, program: fallbackparticle } ) );
+        i = particles.children.length;
         particle.scale.x = 0.25 * sim.types[sim.atoms[i].t].scaleThree;
         particle.scale.y = 0.25 * sim.types[sim.atoms[i].t].scaleThree;
         particle.scale.z = 0.25 * sim.types[sim.atoms[i].t].scaleThree;

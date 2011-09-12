@@ -357,7 +357,7 @@
           <label for="baro">Activate barostat (affecting <span id="baroaffect"></span>)</label><br/>
           P<sub>0</sub>=<input type="number" id="barop0" value="0.0" 
                                onchange="baropt.P0=parseFloat(this.value)/jsmd.constants.MPa"/> MPa,
-          &tau;=<input type="number" value="100.0" onchange="baropt.tau=parseFloat(this.value)"/> ps
+          &tau;=<input type="number" value="1000.0" onchange="baropt.tau=parseFloat(this.value)"/> ps
           <div class="optional">
             <input id="baroramp" type="checkbox" 
                    onclick="baropt.ramp=this.checked; $('#barop0').attr('disabled', baropt.ramp);">
@@ -375,12 +375,12 @@
           <input id="therm" type="checkbox" onclick="sim.computeChain[5] = this.checked ? thermostat : null">
           <label for="therm">Activate thermostat</label><br/>
           T<sub>0</sub>=<input type="number" id="thermt0" value="100" step="1" onchange="thermopt.T0=parseFloat(this.value)*jsmd.constants.kB"/> K,
-          &tau;=<input type="number" value="0.1" step="2.0" onchange="thermopt.tau=parseFloat(this.value)"/> ps
+          &tau;=<input type="number" value="1" step="1.0" onchange="thermopt.tau=parseFloat(this.value)"/> ps
           <div class="optional">
             <input id="thermramp" type="checkbox" 
                    onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
             <label for="thermramp">ramp thermostat settemperature</label><br/>
-            $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/ps
+            $\frac{dT_0}{dt}$=<input type="number" value="0.05" step="0.01" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/ps
           </div>
           <div class="helptext">
             A thermostat controls the <i>temperature</i> in the simulation cell. jsMD implements a <a href="http://en.wikipedia.org/wiki/Berendsen_thermostat">Berendsen thermostat</a> that regulates temperature through simple velocity rescaling.
@@ -455,7 +455,7 @@
 
         // duplicate the onchange hander into click handler for input[type=number] elements
         // workaround for http://code.google.com/p/chromium/issues/detail?id=51836
-        $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onclick=e.onchange; } } );
+        $('input[type=number]').each( function(i,e) { if( e.onclick == null ) { e.onblur=e.onclick=e.onchange; } } );
         
         // open all wp links in external window
         $('a.wp').each( function(i,e) { 
@@ -816,9 +816,9 @@
 
 
       // w and w/o barostat
-      var baropt = { P0: 0.0, tau: 100.0, ramp: false, dP0dt: 0.01 },
+      var baropt = { P0: 0.0, tau: 1000.0, ramp: false, dP0dt: 0.01 },
           barostat,
-          thermopt = { T0: 100.0*jsmd.constants.kB, tau: 2.0, ramp: false, dT0dt: 0.5*jsmd.constants.kB },
+          thermopt = { T0: 100.0*jsmd.constants.kB, tau: 1.0, ramp: false, dT0dt: 0.05*jsmd.constants.kB },
           thermostat = jsmd.compute.thermostat( thermopt );
 
       function startAnim() {

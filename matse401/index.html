@@ -261,7 +261,7 @@
           <div id="enerbox">
             <div><i><a class="wp" href="Potential_energy">E<sub>pot</sub> = </a><span id="showEpot"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
             <div><i><a class="wp" href="Kinetic_energy">E<sub>kin</sub> = </a><span id="showEkin"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
-            <div><i><a class="wp" href="Internal_energy">E<sub>tot</sub> = </a><span id="showEtot"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
+            <div><i><a class="wp" href="Internal_energy">U = </a><span id="showEtot"></span></i> <a class="wp" href="Electron_volt">eV</a></div>
           </div>
           <div class="optional">
           <input id="calcener" type="checkbox" onclick="calcener=this.checked ? $('#enerbox').show(400) : $('#enerbox').hide(400)">
@@ -380,7 +380,7 @@
             <input id="thermramp" type="checkbox" 
                    onclick="thermopt.ramp=this.checked; $('#thermt0').attr('disabled', thermopt.ramp);">
             <label for="thermramp">ramp thermostat settemperature</label><br/>
-            $\frac{dT_0}{dt}$=<input type="number" value="0.05" step="0.01" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/ps
+            $\frac{dT_0}{dt}$=<input type="number" value="0.5" step="0.1" onchange="thermopt.dT0dt=parseFloat(this.value)*jsmd.constants.kB"/> K/ps
           </div>
           <div class="helptext">
             A thermostat controls the <i>temperature</i> in the simulation cell. jsMD implements a <a href="http://en.wikipedia.org/wiki/Berendsen_thermostat">Berendsen thermostat</a> that regulates temperature through simple velocity rescaling.
@@ -780,7 +780,7 @@
       // w and w/o barostat
       var baropt = { P0: 0.0, tau: 1000.0, ramp: false, dP0dt: 0.01 },
           barostat,
-          thermopt = { T0: 100.0*jsmd.constants.kB, tau: 1.0, ramp: false, dT0dt: 0.05*jsmd.constants.kB },
+          thermopt = { T0: 100.0*jsmd.constants.kB, tau: 1.0, ramp: false, dT0dt: 0.5*jsmd.constants.kB },
           thermostat = jsmd.compute.thermostat( thermopt );
 
       function startAnim() {

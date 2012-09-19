@@ -1,0 +1,30 @@
+CACHE MANIFEST
+#version 0.1 19-09-2012
+
+CACHE:
+# index.html is cached by default anyway -- this is just to be explicit
+index.html 
+../../favicon.ico
+../render3d.js
+../vector3d.js
+../linkcell3d.js
+../neighborlist3d.js
+../jsmd.js
+../lib/Three.js
+../lib/jquery.pack.js
+../lib/MathJax/MathJax.js
+../lib/MathJax/jax/input/TeX/config.js
+../lib/MathJax/jax/output/HTML-CSS/config.js
+../lib/MathJax/jax/input/TeX/jax.js
+../lib/MathJax/jax/output/HTML-CSS/jax.js
+../lib/MathJax/extensions/tex2jax.js
+../lib/MathJax/extensions/TeX/bbox.js
+../lib/MathJax/jax/element/mml/jax.js
+../lib/MathJax/jax/output/HTML-CSS/fonts/STIX/fontdata.js
+ball.png
+gtk-info.svg
+
+# Resources that require the user to be online
+NETWORK:
+*
+

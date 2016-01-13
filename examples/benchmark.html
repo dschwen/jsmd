@@ -47,7 +47,7 @@
       sim.setCutOff(4.0,0.25);
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse() );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse() );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );

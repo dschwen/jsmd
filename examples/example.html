@@ -52,7 +52,7 @@
 
       function renderEnergies(c) {
         // calculate total energy
-        var Epot = 0.0, 
+        var Epot = 0.0,
             Ekin = 0.0;
         for( var i = 0; i < this.atoms.length; ++i ) {
           // 1/2 * v^2 * m
@@ -128,7 +128,7 @@
             a.v.y = 8;
             a.t = 1;
             pka = a;
-          }   
+          }
           a.p.wrap(sv);
           sim.atoms.push(a);
         }
@@ -138,7 +138,7 @@
       sim.setCutOff(4.0,0.5);
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse() );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse() );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );

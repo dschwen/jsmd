@@ -33,13 +33,14 @@
 
       t = new jsmd.AtomType();
       t.r = 0.25;
+      t.color3d = { r:1, g:0, b:0 };
       sim.types.push(t);
       t = new jsmd.AtomType();
       t.r = 0.25;
       t.m = 1;
-      t.color = 'rgb(0,200,0)';
+      t.color3d = { r:0, g:0.9, b:0 };
       sim.types.push(t);
-  
+
       var fcc = [[0,0,0],[1,1,0],[1,0,1],[0,1,1]],
           half = new jsmd.Vector(ss/2,ss/2,ss/2);
       for( x = -ss/4; x < ss/4; ++x ) {
@@ -54,7 +55,7 @@
                 a.p.wrap(sv);
                 sim.atoms.push(a);
               }
-            }   
+            }
           }
         }
       }
@@ -63,7 +64,7 @@
       sim.dmax = 0.05;
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse(1.2) );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse(1.2) );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );

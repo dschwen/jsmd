@@ -74,7 +74,7 @@
       sim.setCutOff(4.0,0.5);
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse(1.28) );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse(1.28) );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
@@ -87,16 +87,16 @@
       sim.renderChain = [ jsmd.render.atoms ];
 
       // w and w/o barostat
-      cchain[0] = [ 
+      cchain[0] = [
         jsmd.compute.verlet1,
         jsmd.compute.forces,
         jsmd.compute.verlet2,
       ];
-      cchain[1] = [ 
+      cchain[1] = [
         jsmd.compute.verlet1,
         jsmd.compute.forces,
         jsmd.compute.verlet2,
-        jsmd.compute.berendsenP( { P0: 0.0, tau: 10.0 } ) 
+        jsmd.compute.berendsenP( { P0: 0.0, tau: 10.0 } )
       ];
       sim.computeChain = cchain[0];
 
@@ -104,7 +104,7 @@
       sim.pkapos = [];
       setInterval( function() {
         var it;
-      
+
         for( it = 0; ( !vup && it < 20 ) || ( vup && it == 0 ); ++it ) {
           sim.run(2);
           if( vup ) { sim.draw(); }
@@ -174,7 +174,7 @@
         sim.computeChain = cchain[ box.checked ? 1 : 0 ];
       }
       // remove random atom to create a vacancy
-      function addvac () { 
+      function addvac () {
         sim.atoms.splice( Math.floor( Math.random() * sim.atoms.length ), 1 );
         sim.updateNeighborlist();
       }

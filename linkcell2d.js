@@ -20,7 +20,7 @@ Linkcell2d.prototype.setup = function() {
   for( i = 0; i < this.nx; ++i ) {
     l[i] = new Array(this.ny);
     for( j = 0; j < this.ny; ++j ) {
-      this.data[i][j] = [];
+      l[i][j] = [];
     }
   }
   this.data = l;
@@ -53,11 +53,11 @@ Linkcell2d.prototype.update = function() {
     // clear
     this.clear();
   }
-   
+
   // cell size
   var dx = sim.ss.x/this.nx,
       dy = sim.ss.y/this.ny;
-      
+
   // repopulate with all atoms
   var lx, ly, i;
   for( i = 0; i < this.sim.atoms.length; ++i ) {

@@ -5,6 +5,9 @@
     <meta charset="utf-8">
     <script type="text/javascript" src="../vector3d.js"></script>
     <script type="text/javascript" src="../jsmd.js"></script>
+    <script type="text/javascript" src="../linkcell3d.js"></script>
+    <script type="text/javascript" src="../neighborlist3d.js"></script>
+    <script type="text/javascript" src="../jsmd.js"></script>
   <body>
     <canvas id="simcan" width="625" height="500"></canvas>
     <div id="log"></div>
@@ -50,7 +53,7 @@
 
       function renderEnergies(c) {
         // calculate total energy
-        var Epot = 0.0, 
+        var Epot = 0.0,
             Ekin = 0.0;
         for( var i = 0; i < this.atoms.length; ++i ) {
           // 1/2 * v^2 * m
@@ -99,7 +102,8 @@
       }
 
 
-      var sv = new  jsmd.Vector(20,20*0.8,20),
+      var jsmd = initJSMD(3),
+          sv = new  jsmd.Vector(20,20*0.8,20),
           sim = new jsmd.Simulation(sv);
 
       sim.setCanvas(document.getElementById('simcan'));
@@ -127,7 +131,7 @@
             a.v.z = Math.random();
             a.t = 1;
             pka = a;
-          }   
+          }
           a.p.wrap(sv);
           sim.atoms.push(a);
         }
@@ -137,12 +141,12 @@
       sim.setCutOff(4.0,0.5);
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse() );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse() );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
       sim.setInteraction( [1,1], force );
-      sim.updateNeighborlist();
+      sim.nl.update();
 
       sim.renderChain = [ jsmd.render.atoms ]; // , renderEnergies
       //sim.renderChain = [ jsmd.render.atoms, renderNl, renderPKA ];

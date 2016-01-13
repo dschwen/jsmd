@@ -3,15 +3,19 @@
   <head>
     <title>jsMD example</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="../vector2d.js"></script>
+    <script type="text/javascript" src="../linkcell2d.js"></script>
+    <script type="text/javascript" src="../neighborlist2d.js"></script>
     <script type="text/javascript" src="../jsmd.js"></script>
   <body>
     <canvas id="simcan" width="625" height="500"></canvas>
     <div id="log"></div>
     <script type="text/javascript">
       var pka_num;
+
       function renderNl(c) {
         // draw forces
-        c.strokeStyle = "rgba(0,100,0,0.5)";
+        c.strokeStyle = "rgba(0,100,0,0.25)";
         c.lineWidth = 0.05;
         for( var i = 0; i < this.atoms.length; ++i ) {
           for( var k = 0; k < this.nl.data[i].length; ++k ) {
@@ -19,10 +23,10 @@
             if( i == pka_num || j == pka_num ) {
               c.beginPath();
               var dx = this.atoms[j].p.x - this.atoms[i].p.x;
-              var rx = Math.round(dx/this.w) * this.w;
+              var rx = Math.round(dx/this.ss.x) * this.ss.x;
               dx -= rx;
               var dy = this.atoms[j].p.y - this.atoms[i].p.y;
-              var ry = Math.round(dy/this.h) * this.h;
+              var ry = Math.round(dy/this.ss.y) * this.ss.y;
               dy -= ry;
               c.moveTo( this.atoms[i].p.x, this.atoms[i].p.y );
               c.lineTo( this.atoms[i].p.x + dx, this.atoms[i].p.y + dy );
@@ -48,18 +52,20 @@
         c.stroke();
       }
 
-      var sv = new jsmd.Vector(15,15*0.8);
+      var jsmd = initJSMD(2),
+          sv = new jsmd.Vector(15,15*0.8);
           sim = new jsmd.Simulation(sv);
       sim.setCanvas(document.getElementById('simcan'));
 
       var t;
       t = new jsmd.AtomType();
       t.r = 0.25;
+      t.color3d = { r:1, g:0, b:0 };
       sim.types.push(t);
       t = new jsmd.AtomType();
       t.r = 0.25;
       t.m = 1;
-      t.color = 'rgb(0,200,0)';
+      t.color3d = { r:0, g:1, b:0 };
       sim.types.push(t);
 
       var c = 0, a, pka;
@@ -72,7 +78,7 @@
             a.t = 1;
             pka = a;
             pka_num = sim.atoms.length;
-          }   
+          }
           a.p.wrap(sv);
           sim.atoms.push(a);
         }
@@ -82,11 +88,11 @@
       sim.setCutOff(4.0,0.5);
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse() );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse() );
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
       sim.setInteraction( [1,1], force );
-      sim.updateNeighborlist();
+      sim.nl.update();
 
       sim.renderChain = [ jsmd.render.atoms, renderNl, renderPKA ];
 

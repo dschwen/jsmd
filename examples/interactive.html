@@ -3,6 +3,9 @@
   <head>
     <title>jsMD example</title>
     <meta charset="utf-8">
+    <script type="text/javascript" src="../vector2d.js"></script>
+    <script type="text/javascript" src="../linkcell2d.js"></script>
+    <script type="text/javascript" src="../neighborlist2d.js"></script>
     <script type="text/javascript" src="../jsmd.js"></script>
     <script type="text/javascript" src="../lib/jquery.pack.js"></script>
     <style>
@@ -54,7 +57,7 @@
       </div>
     </div>
     <input type="button" value="reset" id="reset"/><br/>
-    <input id="dirslider" type="range"  min="0" max="720" value="90" style="width: 50%"/><label for="dirslider">kick direction</label>    
+    <input id="dirslider" type="range"  min="0" max="720" value="90" style="width: 50%"/><label for="dirslider">kick direction</label>
     <input id="lenslider" type="range"  min="0" max="100" value="20" style="width: 50%"/><label for="lenslider">kick velocity</label><br/>
     <input type="button" value="kick atom" id="kick"/>
     <div id="log"></div>
@@ -71,7 +74,8 @@
         c.stroke();
       }
 
-      var ss = 20,
+      var jsmd = initJSMD(2),
+          ss = 20,
           sv = new jsmd.Vector(ss,ss*0.8),
           sim = new jsmd.Simulation(sv);
 
@@ -141,16 +145,16 @@
           c = 1.0-c;
         }
         sim.pkapos = [ [ pka.p.x, pka.p.y ] ];
-        sim.updateNeighborlist();
+        sim.nl.update();
         sim.draw();
       }
       $('#reset').click(reset);
 
       // kick pka
-      $('#kick').click( function() { 
+      $('#kick').click( function() {
         // deep copy!
-        pka.v.x = vkick.x; 
-        pka.v.y = vkick.y; 
+        pka.v.x = vkick.x;
+        pka.v.y = vkick.y;
       } );
 
       // simulation cut off
@@ -160,7 +164,7 @@
       reset();
 
       // tabulate the morse potential with all default options
-      var force = jsmd.force.tabulated( jsmd.force.morse() );
+      var force = jsmd.potential.tabulated( jsmd.potential.morse() );
 
       sim.setInteraction( [0,0], force );
       sim.setInteraction( [1,0], force );
@@ -197,12 +201,12 @@
         $('#playbutton').fadeIn();
       }
 
-      $('#cancon').click( function() { 
-        if( simInterval === null ) { 
-          startSim(); 
+      $('#cancon').click( function() {
+        if( simInterval === null ) {
+          startSim();
         } else {
           stopSim();
-        } 
+        }
       } );
     </script>
   </body>

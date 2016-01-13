@@ -23,4 +23,3 @@ Its primary purpose is teaching the basic concepts of MD to undergrad and gradua
 * [particle3d.html](http://dschwen.github.io/jsmd/examples/particle3d.html)
 * [particle3dwebgl.html](http://dschwen.github.io/jsmd/examples/particle3dwebgl.html)
 * [plot.html](http://dschwen.github.io/jsmd/examples/plot.html)
-* [standalone.html](http://dschwen.github.io/jsmd/examples/standalone.html)
